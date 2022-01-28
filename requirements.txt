@@ -1,0 +1,2 @@
+arcade~=2.6.9
+Shapely~=1.8.0
