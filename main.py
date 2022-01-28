@@ -435,8 +435,7 @@ class Visualizer(arcade.Window):
         self.drawn = False
         self.scale = 0.9
 
-        # self.parsed_files = [ParsedCode("../scanner/main.cpp")]
-        self.parsed_files = [ParsedCode("some_code.cpp")]
+        self.parsed_files = [ParsedCode("sample_code/some_code.cpp")]
         for parsed_file in self.parsed_files:
             parsed_file.parse()
 
