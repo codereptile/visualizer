@@ -103,7 +103,7 @@ class Visualizer(arcade.Window):
         self.parser = Parser()
         self.graphics_info = {}
 
-        self.scaler = Scaler(0.9)
+        self.scaler = Scaler(0.7)
 
         self.should_redraw = False
         self.a = False
@@ -140,10 +140,10 @@ class Visualizer(arcade.Window):
         self.should_redraw = True
 
     def compute_node_size(self, node, scaler: Scaler) -> None:
-        if type(node) == CodeLine or (self.a and type(node) == CodeBlock):
+        if type(node) == CodeLine:
             self.graphics_info[node].size_x = scaler.MIN_SIZE
             self.graphics_info[node].size_y = scaler.MIN_SIZE
-        else:
+        elif type(node) == CodeBlock:
             self.graphics_info[node].size_x = 0
             self.graphics_info[node].size_y = 0 + scaler.BUFFER_SIZE_VERTICAL * (len(node.body_nodes) + 1)
             # calculate new size:
@@ -152,34 +152,85 @@ class Visualizer(arcade.Window):
                 self.graphics_info[node].size_y += self.graphics_info[i].size_y
                 self.graphics_info[node].size_x = max(self.graphics_info[node].size_x,
                                                       self.graphics_info[i].size_x + scaler.BUFFER_SIZE_HORIZONTAL * 2)
-            if type(node) == If:
-                for i in node.else_nodes:
-                    self.compute_node_size(i, scaler)
-                    self.graphics_info[node].size_y += self.graphics_info[i].size_y
-                    self.graphics_info[node].size_x = max(self.graphics_info[node].size_x, self.graphics_info[
-                        i].size_x + scaler.BUFFER_SIZE_HORIZONTAL * 2)
+        elif type(node) == ForLoop or type(node) == ForRangeLoop or type(node) == WhileLoop:
+            self.graphics_info[node].size_x = 0
+            self.graphics_info[node].size_y = 0 + scaler.BUFFER_SIZE_VERTICAL * (len(node.body_nodes) + 1)
+            # calculate new size:
+            for i in node.body_nodes:
+                self.compute_node_size(i, scaler)
+                self.graphics_info[node].size_y += self.graphics_info[i].size_y
+                self.graphics_info[node].size_x = max(self.graphics_info[node].size_x,
+                                                      self.graphics_info[i].size_x + scaler.BUFFER_SIZE_HORIZONTAL * 2)
+        elif type(node) == If:
+            self.graphics_info[node].size_x = 0
+            self.graphics_info[node].size_y = 0 + scaler.BUFFER_SIZE_VERTICAL * (
+                    len(node.body_nodes) + len(node.else_nodes) + 1)
+            # calculate new size:
+            for i in node.body_nodes:
+                self.compute_node_size(i, scaler)
+                self.graphics_info[node].size_y += self.graphics_info[i].size_y
+                self.graphics_info[node].size_x = max(self.graphics_info[node].size_x,
+                                                      self.graphics_info[i].size_x + scaler.BUFFER_SIZE_HORIZONTAL * 2)
+            for i in node.else_nodes:
+                self.compute_node_size(i, scaler)
+                self.graphics_info[node].size_y += self.graphics_info[i].size_y
+                self.graphics_info[node].size_x = max(self.graphics_info[node].size_x,
+                                                      self.graphics_info[i].size_x + scaler.BUFFER_SIZE_HORIZONTAL * 2)
+        elif type(node) == Function:
+            self.graphics_info[node].size_x = 0
+            self.graphics_info[node].size_y = 0 + scaler.BUFFER_SIZE_VERTICAL * (len(node.body_nodes) + 1)
+            # calculate new size:
+            for i in node.body_nodes:
+                self.compute_node_size(i, scaler)
+                self.graphics_info[node].size_y += self.graphics_info[i].size_y
+                self.graphics_info[node].size_x = max(self.graphics_info[node].size_x,
+                                                      self.graphics_info[i].size_x + scaler.BUFFER_SIZE_HORIZONTAL * 2)
             if type(node) == Function:
                 self.graphics_info[node].size_y += scaler.FUNCTIONS_ACCESS_SPECIFIER_BUFFER
+        else:
+            raise RuntimeError("unknown type")
 
     def compute_node_position(self, node, scaler: Scaler, offset_x: int, offset_y: int) -> None:
         self.graphics_info[node].pos_x = offset_x
         self.graphics_info[node].pos_y = offset_y
-        if type(node) != CodeLine:
+
+        if type(node) == CodeLine:
+            pass
+        elif type(node) == CodeBlock:
             offset_y += self.graphics_info[node].size_y
-
-            if type(node) == Function:
-                offset_y -= scaler.FUNCTIONS_ACCESS_SPECIFIER_BUFFER
-
             offset_x += scaler.BUFFER_SIZE_HORIZONTAL
             for i in node.body_nodes:
                 offset_y -= scaler.BUFFER_SIZE_VERTICAL
                 offset_y -= self.graphics_info[i].size_y
                 self.compute_node_position(i, scaler, offset_x, offset_y)
-            if type(node) == If:
-                for i in node.else_nodes:
-                    offset_y -= scaler.BUFFER_SIZE_VERTICAL
-                    offset_y -= self.graphics_info[i].size_y
-                    self.compute_node_position(i, scaler, offset_x, offset_y)
+        elif type(node) == ForLoop or type(node) == ForRangeLoop or type(node) == WhileLoop:
+            offset_y += self.graphics_info[node].size_y
+            offset_x += scaler.BUFFER_SIZE_HORIZONTAL
+            for i in node.body_nodes:
+                offset_y -= scaler.BUFFER_SIZE_VERTICAL
+                offset_y -= self.graphics_info[i].size_y
+                self.compute_node_position(i, scaler, offset_x, offset_y)
+        elif type(node) == If:
+            offset_y += self.graphics_info[node].size_y
+            offset_x += scaler.BUFFER_SIZE_HORIZONTAL
+            for i in node.body_nodes:
+                offset_y -= scaler.BUFFER_SIZE_VERTICAL
+                offset_y -= self.graphics_info[i].size_y
+                self.compute_node_position(i, scaler, offset_x, offset_y)
+            for i in node.else_nodes:
+                offset_y -= scaler.BUFFER_SIZE_VERTICAL
+                offset_y -= self.graphics_info[i].size_y
+                self.compute_node_position(i, scaler, offset_x, offset_y)
+        elif type(node) == Function:
+            offset_y += self.graphics_info[node].size_y
+            offset_y -= scaler.FUNCTIONS_ACCESS_SPECIFIER_BUFFER
+            offset_x += scaler.BUFFER_SIZE_HORIZONTAL
+            for i in node.body_nodes:
+                offset_y -= scaler.BUFFER_SIZE_VERTICAL
+                offset_y -= self.graphics_info[i].size_y
+                self.compute_node_position(i, scaler, offset_x, offset_y)
+        else:
+            raise RuntimeError("unknown type")
 
     def on_draw(self):
         if self.should_redraw:
@@ -214,9 +265,16 @@ class Visualizer(arcade.Window):
                                           self.graphics_info[node].pos_y + self.graphics_info[node].size_y / 2,
                                           self.graphics_info[node].size_x, self.graphics_info[node].size_y, (0, 0, 0))
         if type(node) != CodeLine:
+            offset_y = 0
             for i in node.body_nodes:
                 self.recursive_node_draw(i)
-            if type(node) == If:
+                offset_y += self.graphics_info[i].size_y + self.scaler.BUFFER_SIZE_VERTICAL
+            if type(node) == If and node.else_nodes:
+                arcade.draw_line(self.graphics_info[node].pos_x,
+                                 self.graphics_info[node].pos_y + self.graphics_info[node].size_y - offset_y,
+                                 self.graphics_info[node].pos_x + self.graphics_info[node].size_x,
+                                 self.graphics_info[node].pos_y + self.graphics_info[node].size_y - offset_y,
+                                 (0, 0, 0), self.scaler.LINE_WIDTH)
                 for i in node.else_nodes:
                     self.recursive_node_draw(i)
 
