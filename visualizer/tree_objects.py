@@ -1,14 +1,6 @@
 import clang.cindex
 
 
-class Node:
-    def __init__(self, parent_node):
-        self.parent_node = parent_node
-        self.root_node = self
-        if self.parent_node is not None:
-            self.root_node = self.parent_node.root_node
-
-
 def parse_cursor(children_nodes, cursor: clang.cindex.Cursor, parent_node):
     if cursor.kind.name == 'COMPOUND_STMT':
         for i in cursor.get_children():
@@ -28,6 +20,21 @@ def parse_cursor(children_nodes, cursor: clang.cindex.Cursor, parent_node):
     # print('\t', cursor.kind)
 
 
+class Node:
+    def __init__(self, parent_node):
+        self.parent_node = parent_node
+        self.root_node = self
+        if self.parent_node is not None:
+            self.root_node = self.parent_node.root_node
+
+        # This is used only for drawing:
+        self.pos_x = 0
+        self.pos_y = 0
+
+        self.size_x = 50
+        self.size_y = 50
+
+
 class CodeLine(Node):
     def __init__(self, parent_node, cursor: clang.cindex.Cursor):
         super().__init__(parent_node)
@@ -40,14 +47,14 @@ class CodeLine(Node):
 class CodeBlock(Node):
     def __init__(self, parent_node):
         super().__init__(parent_node)
-        self.code_lines = []
+        self.body_nodes = []
 
     def add_line(self, cursor: clang.cindex.Cursor):
-        self.code_lines.append(CodeLine(self, cursor))
+        self.body_nodes.append(CodeLine(self, cursor))
 
     def print(self, depth):
         print('\t' * depth, 'Block of code:')
-        for i in self.code_lines:
+        for i in self.body_nodes:
             i.print(depth + 1)
 
 

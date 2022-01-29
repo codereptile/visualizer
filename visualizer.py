@@ -9,10 +9,12 @@ if __name__ == '__main__':
 
     args = argument_parser.parse_args()
 
-    file_parser = visualizer.Parser()
+    viz = visualizer.Visualizer()
 
     if args.mode == 'cpp':
-        file_parser.parse(args.target, visualizer.ParseModes.CPP)
+        viz.parse(args.target, visualizer.ParseModes.CPP)
     elif args.mode == 'py':
-        file_parser.parse(args.target, visualizer.ParseModes.PYTHON)
+        viz.parse(args.target, visualizer.ParseModes.PYTHON)
+
+    viz.run()
 
