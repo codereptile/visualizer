@@ -73,6 +73,7 @@ class BaseObject:
         self.size_y = MIN_SIZE
 
         self.objects = []
+        self.root = self
 
     def print(self, depth: int = 0):
         print(depth * "\t", "GENERAL OBJECT")
@@ -299,6 +300,7 @@ class ParsedCode:
             object_candidate = self.parse_object(function)
             if object_candidate is not None:
                 self.objects.append(object_candidate)
+                self.set_roots(self.objects[-1], self.objects[-1])
 
         print_diagnostics(translation_unit)
 
@@ -311,6 +313,9 @@ class ParsedCode:
     def print(self):
         for i in self.objects:
             i.print()
+        print("\n\nDetected functions:")
+        for i in self.function_handlers:
+            print(i.function.name)
 
     def draw(self):
         for i in self.objects:
@@ -419,6 +424,11 @@ class ParsedCode:
             return code_line
         else:
             return None
+
+    def set_roots(self, element, root):
+        element.root = root
+        for i in element.objects:
+            self.set_roots(i, root)
 
 
 class Visualizer(arcade.Window):
