@@ -148,7 +148,10 @@ class Function(Node):
 
 class CodeTree:
     def __init__(self):
-        self.functions = []
-        self.classes = []
-        self.methods = []
-        self.namespaces = []
+        self.nodes = []
+
+        # TODO: get a dict for all these:
+        # self.functions = []
+        # self.classes = []
+        # self.methods = []
+        # self.namespaces = []

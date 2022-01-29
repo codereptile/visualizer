@@ -68,7 +68,7 @@ class Parser:
         for cursor in translation_unit.cursor.get_children():
             if not is_file_in_standart(str(cursor.location.file)):
                 if cursor.kind.name == 'FUNCTION_DECL':
-                    self.code_tree.functions.append(Function(None, cursor))
+                    self.code_tree.nodes.append(Function(None, cursor))
                 elif cursor.kind.name == 'USING_DIRECTIVE':
                     print('LMAO, using!!')
                     # FIXME: this should 100% be different =)
@@ -122,26 +122,18 @@ class Visualizer(arcade.Window):
 
     def parse(self, target: str, mode: ParseModes) -> None:
         self.parser.parse(target, mode)
-        for i in self.parser.code_tree.functions:
-            self.set_graphics_info(i)
-        for i in self.parser.code_tree.classes:
+        # FIXME: make one loop instead of two to reduce code duplicates
+        for i in self.parser.code_tree.nodes:
             self.set_graphics_info(i)
         self.should_redraw = True
 
     def on_resize(self, width: float, height: float):
-        for i in self.parser.code_tree.classes:
-            self.compute_node_size(i, self.scaler)
-
-        for i in self.parser.code_tree.functions:
+        for i in self.parser.code_tree.nodes:
             self.compute_node_size(i, self.scaler)
 
         offset_x = 100
 
-        for i in self.parser.code_tree.classes:
-            self.compute_node_position(i, self.scaler, offset_x, (self.height - self.graphics_info[i].size_y) // 2)
-            offset_x += self.scaler.OBJECTS_BUFFER
-
-        for i in self.parser.code_tree.functions:
+        for i in self.parser.code_tree.nodes:
             self.compute_node_position(i, self.scaler, offset_x, (self.height - self.graphics_info[i].size_y) // 2)
             offset_x += self.scaler.OBJECTS_BUFFER
 
@@ -193,9 +185,7 @@ class Visualizer(arcade.Window):
         if self.should_redraw:
             arcade.start_render()
 
-            for i in self.parser.code_tree.classes:
-                self.recursive_node_draw(i)
-            for i in self.parser.code_tree.functions:
+            for i in self.parser.code_tree.nodes:
                 self.recursive_node_draw(i)
 
             arcade.finish_render()
