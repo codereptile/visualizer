@@ -1,6 +1,7 @@
 # This module uses various code parsers to grab data about the code,
 # and compress it into a lightweight and standardized tree that is easy to visualize.
 import random
+from pprint import pprint
 
 import arcade
 import enum
@@ -78,10 +79,19 @@ class Parser:
             # cursor_dump(cursor)
 
 
+class NodeGraphicsInfo:
+    def __init__(self, target):
+        self.target = target
+
+        self.pos_x = 0
+        self.pos_y = 0
+
+        self.size_x = 50
+        self.size_y = 50
+
+
 class Visualizer(arcade.Window):
     def __init__(self):
-        self.parser = Parser()
-
         super().__init__(int(arcade.get_screens()[0].width), int(arcade.get_screens()[0].height),
                          title="Codereptile visualizer", resizable=True, center_window=True, vsync=True)
         arcade.set_background_color((255, 255, 255))
@@ -90,15 +100,32 @@ class Visualizer(arcade.Window):
                          anchor_y="center")
         arcade.finish_render()
 
-        self.should_redraw = False
+        self.parser = Parser()
+        self.graphics_info = {}
+
         self.scaler = Scaler(0.9)
 
+        self.should_redraw = False
         self.a = False
+        # FIXME: make this 'a' a proper thing
+        # TODO: add side-by-side code comparison
 
-        # FIXME: add side-by-side code comparison
+    def set_graphics_info(self, node):
+        self.graphics_info[node] = NodeGraphicsInfo(node)
+        if type(node) != CodeLine:
+            for i in node.body_nodes:
+                self.set_graphics_info(i)
+            # FIXME: probably this if type(node) == If thing should have a more elegant solution
+            if type(node) == If:
+                for i in node.else_nodes:
+                    self.set_graphics_info(i)
 
     def parse(self, target: str, mode: ParseModes) -> None:
         self.parser.parse(target, mode)
+        for i in self.parser.code_tree.functions:
+            self.set_graphics_info(i)
+        for i in self.parser.code_tree.classes:
+            self.set_graphics_info(i)
         self.should_redraw = True
 
     def on_resize(self, width: float, height: float):
@@ -111,40 +138,42 @@ class Visualizer(arcade.Window):
         offset_x = 100
 
         for i in self.parser.code_tree.classes:
-            self.compute_node_position(i, self.scaler, offset_x, (self.height - i.size_y) // 2)
+            self.compute_node_position(i, self.scaler, offset_x, (self.height - self.graphics_info[i].size_y) // 2)
             offset_x += self.scaler.OBJECTS_BUFFER
 
         for i in self.parser.code_tree.functions:
-            self.compute_node_position(i, self.scaler, offset_x, (self.height - i.size_y) // 2)
+            self.compute_node_position(i, self.scaler, offset_x, (self.height - self.graphics_info[i].size_y) // 2)
             offset_x += self.scaler.OBJECTS_BUFFER
 
         self.should_redraw = True
 
     def compute_node_size(self, node, scaler: Scaler) -> None:
         if type(node) == CodeLine or (self.a and type(node) == CodeBlock):
-            node.size_x = scaler.MIN_SIZE
-            node.size_y = scaler.MIN_SIZE
+            self.graphics_info[node].size_x = scaler.MIN_SIZE
+            self.graphics_info[node].size_y = scaler.MIN_SIZE
         else:
-            node.size_x = 0
-            node.size_y = 0 + scaler.BUFFER_SIZE_VERTICAL * (len(node.body_nodes) + 1)
+            self.graphics_info[node].size_x = 0
+            self.graphics_info[node].size_y = 0 + scaler.BUFFER_SIZE_VERTICAL * (len(node.body_nodes) + 1)
             # calculate new size:
             for i in node.body_nodes:
                 self.compute_node_size(i, scaler)
-                node.size_y += i.size_y
-                node.size_x = max(node.size_x, i.size_x + scaler.BUFFER_SIZE_HORIZONTAL * 2)
+                self.graphics_info[node].size_y += self.graphics_info[i].size_y
+                self.graphics_info[node].size_x = max(self.graphics_info[node].size_x,
+                                                      self.graphics_info[i].size_x + scaler.BUFFER_SIZE_HORIZONTAL * 2)
             if type(node) == If:
                 for i in node.else_nodes:
                     self.compute_node_size(i, scaler)
-                    node.size_y += i.size_y
-                    node.size_x = max(node.size_x, i.size_x + scaler.BUFFER_SIZE_HORIZONTAL * 2)
+                    self.graphics_info[node].size_y += self.graphics_info[i].size_y
+                    self.graphics_info[node].size_x = max(self.graphics_info[node].size_x, self.graphics_info[
+                        i].size_x + scaler.BUFFER_SIZE_HORIZONTAL * 2)
             if type(node) == Function:
-                node.size_y += scaler.FUNCTIONS_ACCESS_SPECIFIER_BUFFER
+                self.graphics_info[node].size_y += scaler.FUNCTIONS_ACCESS_SPECIFIER_BUFFER
 
     def compute_node_position(self, node, scaler: Scaler, offset_x: int, offset_y: int) -> None:
-        node.pos_x = offset_x
-        node.pos_y = offset_y
+        self.graphics_info[node].pos_x = offset_x
+        self.graphics_info[node].pos_y = offset_y
         if type(node) != CodeLine:
-            offset_y += node.size_y
+            offset_y += self.graphics_info[node].size_y
 
             if type(node) == Function:
                 offset_y -= scaler.FUNCTIONS_ACCESS_SPECIFIER_BUFFER
@@ -152,12 +181,12 @@ class Visualizer(arcade.Window):
             offset_x += scaler.BUFFER_SIZE_HORIZONTAL
             for i in node.body_nodes:
                 offset_y -= scaler.BUFFER_SIZE_VERTICAL
-                offset_y -= i.size_y
+                offset_y -= self.graphics_info[i].size_y
                 self.compute_node_position(i, scaler, offset_x, offset_y)
             if type(node) == If:
                 for i in node.else_nodes:
                     offset_y -= scaler.BUFFER_SIZE_VERTICAL
-                    offset_y -= i.size_y
+                    offset_y -= self.graphics_info[i].size_y
                     self.compute_node_position(i, scaler, offset_x, offset_y)
 
     def on_draw(self):
@@ -187,11 +216,13 @@ class Visualizer(arcade.Window):
         elif type(node) == CodeBlock:
             if not self.a:
                 color = (0, 0, 0, 0)
-        arcade.draw_rectangle_filled(node.pos_x + node.size_x / 2, node.pos_y + node.size_y / 2,
-                                     node.size_x, node.size_y, color)
+        arcade.draw_rectangle_filled(self.graphics_info[node].pos_x + self.graphics_info[node].size_x / 2,
+                                     self.graphics_info[node].pos_y + self.graphics_info[node].size_y / 2,
+                                     self.graphics_info[node].size_x, self.graphics_info[node].size_y, color)
         if type(node) != CodeBlock:
-            arcade.draw_rectangle_outline(node.pos_x + node.size_x / 2, node.pos_y + node.size_y / 2,
-                                          node.size_x, node.size_y, (0, 0, 0))
+            arcade.draw_rectangle_outline(self.graphics_info[node].pos_x + self.graphics_info[node].size_x / 2,
+                                          self.graphics_info[node].pos_y + self.graphics_info[node].size_y / 2,
+                                          self.graphics_info[node].size_x, self.graphics_info[node].size_y, (0, 0, 0))
         if type(node) != CodeLine:
             for i in node.body_nodes:
                 self.recursive_node_draw(i)

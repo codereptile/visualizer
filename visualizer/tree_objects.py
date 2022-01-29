@@ -27,13 +27,6 @@ class Node:
         if self.parent_node is not None:
             self.root_node = self.parent_node.root_node
 
-        # This is used only for drawing:
-        self.pos_x = 0
-        self.pos_y = 0
-
-        self.size_x = 50
-        self.size_y = 50
-
 
 class CodeLine(Node):
     def __init__(self, parent_node, cursor: clang.cindex.Cursor):
