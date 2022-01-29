@@ -1,5 +1,4 @@
 import clang.cindex
-from .cpp_specific_functions import *
 
 
 class Node:

@@ -5,6 +5,7 @@ import enum
 import os.path
 import sys
 from .tree_objects import *
+from .cpp_specific_functions import *
 
 
 class ParseModes(enum.Enum):

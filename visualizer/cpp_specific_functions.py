@@ -1,5 +1,6 @@
 from .utils import *
 
+
 def is_file_in_standart(file: str) -> bool:
     triggers = [
         'gcc',
