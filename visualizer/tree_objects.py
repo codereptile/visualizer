@@ -1,4 +1,7 @@
+import sys
+
 import clang.cindex
+from .cpp_specific_functions import *
 
 
 def parse_cursor(children_nodes, cursor: clang.cindex.Cursor, parent_node):
@@ -130,6 +133,7 @@ class Function(Node):
     def __init__(self, parent_node, cursor: clang.cindex.Cursor):
         super().__init__(parent_node)
         self.body_nodes = []
+        self.name = cursor.spelling
 
         print('Constructing function \'' + cursor.spelling + '\' from cursor:')
 
@@ -146,12 +150,24 @@ class Function(Node):
         print()
 
 
+class FunctionCall:
+    def __init__(self, source, target=None):
+        self.source = source
+        self.target = target
+
+
 class CodeTree:
     def __init__(self):
+        # list of all independent objects
+        self.roots = []
+
+        # list of all objects
         self.nodes = []
 
+        self.function_calls = []
+
         # TODO: get a dict for all these:
-        # self.functions = []
+        self.functions = {}
         # self.classes = []
         # self.methods = []
         # self.namespaces = []

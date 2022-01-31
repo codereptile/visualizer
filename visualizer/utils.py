@@ -24,6 +24,8 @@ class Scaler:
         self.BUFFER_SIZE_HORIZONTAL = 0
         self.OBJECTS_BUFFER = 0
         self.LINE_WIDTH = 0
+        # Higher would result in a more curved line:
+        self.LINE_CURVATURE = 1 / 3
         self.rescale(initial_scale)
 
     def rescale(self, scale: float = 1):

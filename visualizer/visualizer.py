@@ -33,6 +33,15 @@ class Parser:
             #  (make parsing outside of class constructors)
             raise RuntimeError('Invalid mode given')
 
+        for i in self.code_tree.roots:
+            self.detect_all_objects(i)
+
+        for i in self.code_tree.nodes:
+            self.detect_if_function(i)
+
+        for i in self.code_tree.nodes:
+            self.detect_if_function_call(i)
+
     def parse_cpp(self) -> None:
         if not os.path.isdir(self.target):
             print('Given target is not a directory')
@@ -68,21 +77,53 @@ class Parser:
         for cursor in translation_unit.cursor.get_children():
             if not is_file_in_standart(str(cursor.location.file)):
                 if cursor.kind.name == 'FUNCTION_DECL':
-                    self.code_tree.nodes.append(Function(None, cursor))
+                    self.code_tree.roots.append(Function(None, cursor))
                 elif cursor.kind.name == 'USING_DIRECTIVE':
                     print('LMAO, using!!')
                     # FIXME: this should 100% be different =)
+                elif cursor.kind.name == 'VAR_DECL':
+                    print("LMAO, decl!!")
+                elif cursor.kind.name == 'TYPE_ALIAS_DECL':
+                    print("LMAO, alias decl!!")
                 else:
                     cursor_dump(cursor)
                     raise NotImplementedError('Unknown cursor kind', cursor.kind)
 
             # cursor_dump(cursor)
 
+    def detect_all_objects(self, node):
+        self.code_tree.nodes.append(node)
+        if type(node) != CodeLine:
+            for i in node.body_nodes:
+                self.detect_all_objects(i)
+            if type(node) == If:
+                for i in node.else_nodes:
+                    self.detect_all_objects(i)
+
+    # Detects if a node is a function, and if so, adds it to the function dict
+    def detect_if_function(self, node):
+        if type(node) == Function:
+            self.code_tree.functions[node.name] = node
+
+    def detect_if_function_call(self, node):
+        # FIXME: make more detailed, recursive check (done, but need to check If statements)
+        # TODO: somehow show how many times a function is called in a line
+        if type(node) == CodeLine:
+            self.check_cursor_for_function_calls(node, node.cursor)
+
+    def check_cursor_for_function_calls(self, node, cursor):
+        if cursor.kind.name == 'CALL_EXPR':
+            self.code_tree.function_calls.append(
+                FunctionCall(node, self.code_tree.functions.get(cursor.spelling)))
+        for child in cursor.get_children():
+            self.check_cursor_for_function_calls(node, child)
+
 
 class NodeGraphicsInfo:
     def __init__(self, target):
         self.target = target
 
+        # left lower corner
         self.pos_x = 0
         self.pos_y = 0
 
@@ -90,8 +131,18 @@ class NodeGraphicsInfo:
         self.size_y = 50
 
 
+class FunctionCallGraphicsInfo:
+    def __init__(self, function_call):
+        self.function_call = function_call
+
+        self.start_pos_x = -1
+        self.start_pos_y = -1
+        self.end_pos_x = -1
+        self.end_pos_y = -1
+
+
 class Visualizer(arcade.Window):
-    def __init__(self):
+    def __init__(self, scale:float):
         super().__init__(int(arcade.get_screens()[0].width), int(arcade.get_screens()[0].height),
                          title="Codereptile visualizer", resizable=True, center_window=True, vsync=True)
         arcade.set_background_color((255, 255, 255))
@@ -103,14 +154,17 @@ class Visualizer(arcade.Window):
         self.parser = Parser()
         self.graphics_info = {}
 
-        self.scaler = Scaler(0.7)
+        self.scaler = Scaler(scale)
 
         self.should_redraw = False
         self.a = False
-        # FIXME: make this 'a' a proper thing
+        # FIXME: make this 'a' a proper thing (it's used for showing blocks)
         # TODO: add side-by-side code comparison
 
     def set_graphics_info(self, node):
+        if type(node) == FunctionCall:
+            self.graphics_info[node] = FunctionCallGraphicsInfo(node)
+            return
         self.graphics_info[node] = NodeGraphicsInfo(node)
         if type(node) != CodeLine:
             for i in node.body_nodes:
@@ -123,21 +177,37 @@ class Visualizer(arcade.Window):
     def parse(self, target: str, mode: ParseModes) -> None:
         self.parser.parse(target, mode)
         # FIXME: make one loop instead of two to reduce code duplicates
-        for i in self.parser.code_tree.nodes:
+        for i in self.parser.code_tree.roots:
+            self.set_graphics_info(i)
+        for i in self.parser.code_tree.function_calls:
             self.set_graphics_info(i)
         self.should_redraw = True
 
     def on_resize(self, width: float, height: float):
-        for i in self.parser.code_tree.nodes:
+        for i in self.parser.code_tree.roots:
             self.compute_node_size(i, self.scaler)
 
         offset_x = 100
 
-        for i in self.parser.code_tree.nodes:
+        for i in self.parser.code_tree.roots:
             self.compute_node_position(i, self.scaler, offset_x, (self.height - self.graphics_info[i].size_y) // 2)
             offset_x += self.scaler.OBJECTS_BUFFER
 
+        for i in self.parser.code_tree.function_calls:
+            self.compute_function_call_graphics_info(i)
+
         self.should_redraw = True
+
+    def compute_function_call_graphics_info(self, node):
+        if node.target is not None:
+            self.graphics_info[node].start_pos_x = self.graphics_info[node.source].pos_x + self.graphics_info[
+                node.source].size_x / 2
+            self.graphics_info[node].start_pos_y = self.graphics_info[node.source].pos_y + self.graphics_info[
+                node.source].size_y / 2
+            self.graphics_info[node].end_pos_x = self.graphics_info[node.target].pos_x + self.graphics_info[
+                node.target].size_x / 2
+            self.graphics_info[node].end_pos_y = self.graphics_info[node.target].pos_y + self.graphics_info[
+                node.target].size_y
 
     def compute_node_size(self, node, scaler: Scaler) -> None:
         if type(node) == CodeLine:
@@ -236,11 +306,52 @@ class Visualizer(arcade.Window):
         if self.should_redraw:
             arcade.start_render()
 
-            for i in self.parser.code_tree.nodes:
+            for i in self.parser.code_tree.roots:
                 self.recursive_node_draw(i)
+            for i in self.parser.code_tree.function_calls:
+                self.function_call_draw(i)
 
             arcade.finish_render()
             self.should_redraw = False
+
+    def function_call_draw(self, node):
+        if node.target != None:
+            def quadBezier(t, p0, p1, p2):
+                return (1 - t) ** 2 * p0 + 2 * (1 - t) * t * p1 + t ** 2 * p2
+
+            t = 0
+            num_segments = 100
+            block = 1 / num_segments
+
+            prev_point_x = self.graphics_info[node].start_pos_x
+            prev_point_y = self.graphics_info[node].start_pos_y
+
+            while t < 1.001:
+                v = [self.graphics_info[node].end_pos_x - self.graphics_info[node].start_pos_x,
+                     self.graphics_info[node].end_pos_y - self.graphics_info[node].start_pos_y]
+                perp_v = [v[1], -v[0]]
+                x = quadBezier(t, self.graphics_info[node].start_pos_x,
+                               (self.graphics_info[node].start_pos_x + self.graphics_info[node].end_pos_x) // 2 +
+                               perp_v[0] * self.scaler.LINE_CURVATURE,
+                               self.graphics_info[node].end_pos_x)
+                y = quadBezier(t, self.graphics_info[node].start_pos_y,
+                               (self.graphics_info[node].start_pos_y + self.graphics_info[node].end_pos_y) // 2 +
+                               perp_v[0] * self.scaler.LINE_CURVATURE,
+                               self.graphics_info[node].end_pos_y)
+                arcade.draw_line(prev_point_x, prev_point_y,
+                                 x, y,
+                                 (0, 0, 0), self.scaler.LINE_WIDTH)
+                prev_point_x = x
+                prev_point_y = y
+                t += block
+
+        # arcade.draw_arc_filled(500, 500, 100, 200, (0, 0, 0), 0, 100)
+        # TODO: make lines curved
+        # arcade.draw_line(self.graphics_info[node].start_pos_x,
+        #                  self.graphics_info[node].start_pos_y,
+        #                  self.graphics_info[node].end_pos_x,
+        #                  self.graphics_info[node].end_pos_y,
+        #                  (0, 0, 0), self.scaler.LINE_WIDTH)
 
     def recursive_node_draw(self, node):
         color = (0, 50, 255)
@@ -257,6 +368,7 @@ class Visualizer(arcade.Window):
         elif type(node) == CodeBlock:
             if not self.a:
                 color = (0, 0, 0, 0)
+        # FIXME: use draw_xywh_rectangle_filled
         arcade.draw_rectangle_filled(self.graphics_info[node].pos_x + self.graphics_info[node].size_x / 2,
                                      self.graphics_info[node].pos_y + self.graphics_info[node].size_y / 2,
                                      self.graphics_info[node].size_x, self.graphics_info[node].size_y, color)
