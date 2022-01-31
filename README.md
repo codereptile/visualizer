@@ -1,4 +1,4 @@
-# visualizer
+# visualizer (v1.0.0)
 
 Right now the app is in alpha testing, so:
 * No docs
