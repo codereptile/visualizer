@@ -338,14 +338,6 @@ class Visualizer(arcade.Window):
                 prev_point_y = y
                 t += block
 
-        # arcade.draw_arc_filled(500, 500, 100, 200, (0, 0, 0), 0, 100)
-        # TODO: make lines curved
-        # arcade.draw_line(self.graphics_info[node].start_pos_x,
-        #                  self.graphics_info[node].start_pos_y,
-        #                  self.graphics_info[node].end_pos_x,
-        #                  self.graphics_info[node].end_pos_y,
-        #                  (0, 0, 0), self.scaler.LINE_WIDTH)
-
     def recursive_node_draw(self, node):
         color = (0, 50, 255)
         if type(node) == CodeLine:
