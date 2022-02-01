@@ -40,3 +40,4 @@ All other black lines are function calls.
 * No class support
 * No struct support
 * 5000 tonnes of useless debug output with no way to shut it off
+* It's hard to tell code structure if there are many If statements
