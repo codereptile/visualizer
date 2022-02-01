@@ -78,16 +78,9 @@ class Parser:
             if not is_file_in_standart(str(cursor.location.file)):
                 if cursor.kind.name == 'FUNCTION_DECL':
                     self.code_tree.roots.append(Function(None, cursor))
-                elif cursor.kind.name == 'USING_DIRECTIVE':
-                    print('LMAO, using!!')
-                    # FIXME: this should 100% be different =)
-                elif cursor.kind.name == 'VAR_DECL':
-                    print("LMAO, decl!!")
-                elif cursor.kind.name == 'TYPE_ALIAS_DECL':
-                    print("LMAO, alias decl!!")
                 else:
                     cursor_dump(cursor)
-                    raise NotImplementedError('Unknown cursor kind', cursor.kind)
+                    print("Warning,", cursor.kind.name, "not supported!!")
 
             # cursor_dump(cursor)
 
@@ -142,7 +135,7 @@ class FunctionCallGraphicsInfo:
 
 
 class Visualizer(arcade.Window):
-    def __init__(self, scale:float):
+    def __init__(self, scale: float):
         super().__init__(int(arcade.get_screens()[0].width), int(arcade.get_screens()[0].height),
                          title="Codereptile visualizer", resizable=True, center_window=True, vsync=True)
         arcade.set_background_color((255, 255, 255))

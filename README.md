@@ -6,3 +6,5 @@ Right now the app is in alpha testing, so:
 * No proper UI
 * Strange debug output all over the place
 * Anything can change at any moment without notice, so pls don't use this in life-critical applications
+
+[Contribution guidelines for this project](examples/segment_tree/image.webp)
