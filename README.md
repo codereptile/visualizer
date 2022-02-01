@@ -28,6 +28,20 @@ All other black lines are function calls.
 
 ![screenshot](https://github.com/codereptile/visualizer/blob/main/examples/segment_tree/image.webp)
 
+# FAQ:
+
+
+What are you using for parsing C++?
+ 
+&mdash; Clang
+
+
+Why not use `<insert your favorite C++ parser>`? 
+
+&mdash;Because parsing C++ propely requires almost compiling it, 
+so only by using a compiler can we get a 100% correct output.
+Easiest example is `operator <<` which in most parsers is registered as a `binary expression`, when in reality it is a `function call`. 
+
 # Known bugs // missing features:
 * Function calls inside Loop and If conditions aer not registered
 * No way to see actual code from visualizer
