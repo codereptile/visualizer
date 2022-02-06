@@ -7,6 +7,12 @@ Right now the app is in alpha testing, so:
 * Strange debug output all over the place
 * Anything can change at any moment without notice, so pls don't use this in life-critical applications
 
+# Instalation:
+```
+sudo apt install llvm
+sudo apt install libclang-11-dev
+```
+
 # General usage:
 
 ```shell
