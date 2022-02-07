@@ -298,7 +298,7 @@ class Visualizer(arcade.Window):
             self.graphics_info[node].size_y += scaler.FUNCTIONS_ACCESS_SPECIFIER_BUFFER
         elif type(node) == Class:
             self.graphics_info[node].size_x = 0
-            self.graphics_info[node].size_y = 0 + scaler.BUFFER_SIZE_VERTICAL * (len(node.body_nodes) + 1)
+            self.graphics_info[node].size_y = 0 + scaler.BUFFER_SIZE_CLASS_VERTICAL * (len(node.body_nodes) + 1)
             # calculate new size:
             for i in node.body_nodes:
                 self.compute_node_size(i, scaler)
@@ -351,7 +351,7 @@ class Visualizer(arcade.Window):
             offset_y += self.graphics_info[node].size_y
             offset_x += scaler.BUFFER_SIZE_HORIZONTAL
             for i in node.body_nodes:
-                offset_y -= scaler.BUFFER_SIZE_VERTICAL
+                offset_y -= scaler.BUFFER_SIZE_CLASS_VERTICAL
                 offset_y -= self.graphics_info[i].size_y
                 self.compute_node_position(i, scaler, offset_x, offset_y)
         else:
@@ -416,7 +416,7 @@ class Visualizer(arcade.Window):
             if not self.a:
                 color = (0, 0, 0, 0)
         elif type(node) == Class:
-            color = (50, 50, 50)
+            color = (75, 75, 75)
         # FIXME: use draw_xywh_rectangle_filled
         arcade.draw_rectangle_filled(self.graphics_info[node].pos_x + self.graphics_info[node].size_x / 2,
                                      self.graphics_info[node].pos_y + self.graphics_info[node].size_y / 2,
