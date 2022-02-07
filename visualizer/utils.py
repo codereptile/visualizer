@@ -12,6 +12,13 @@ def info_print(*args):
     print("\x1B[0m")
 
 
+def extra_print(*args):
+    print("\x1B[34;40m", end="")
+    for i in args:
+        print(i, end=" ")
+    print("\x1B[0m")
+
+
 def no_print(*args):
     pass
 
@@ -33,5 +40,5 @@ class Scaler:
         self.FUNCTIONS_ACCESS_SPECIFIER_BUFFER = int(10 * scale)
         self.BUFFER_SIZE_VERTICAL = int(20 * scale)
         self.BUFFER_SIZE_HORIZONTAL = int(20 * scale)
-        self.OBJECTS_BUFFER = int(300 * scale)
-        self.LINE_WIDTH = int(10 * scale)
+        self.OBJECTS_BUFFER = int(400 * scale)
+        self.LINE_WIDTH = max(int(10 * scale), 1)

@@ -61,3 +61,5 @@ Easiest example is `operator <<` which in most parsers is registered as a `binar
 * No struct support
 * 5000 tonnes of useless debug output with no way to shut it off
 * It's hard to tell code structure if there are many If statements
+* Class constructors are not registered as function calls
+* If a function is defined in .h, it's not detected

@@ -24,6 +24,7 @@ def parse_cursor(children_nodes, cursor: clang.cindex.Cursor, parent_node):
 
 
 class Node:
+    # FIXME: move construction away from constructor
     def __init__(self, parent_node):
         self.parent_node = parent_node
         self.root_node = self
@@ -32,6 +33,7 @@ class Node:
 
 
 class CodeLine(Node):
+    # FIXME: move construction away from constructor
     def __init__(self, parent_node, cursor: clang.cindex.Cursor):
         super().__init__(parent_node)
         self.cursor = cursor
@@ -41,6 +43,7 @@ class CodeLine(Node):
 
 
 class CodeBlock(Node):
+    # FIXME: move construction away from constructor
     def __init__(self, parent_node):
         super().__init__(parent_node)
         self.body_nodes = []
@@ -55,6 +58,7 @@ class CodeBlock(Node):
 
 
 class Loop(Node):
+    # FIXME: move construction away from constructor
     def __init__(self, parent_node, cursor: clang.cindex.Cursor):
         super().__init__(parent_node)
         self.body_nodes = []
@@ -65,6 +69,7 @@ class Loop(Node):
 
 
 class ForLoop(Loop):
+    # FIXME: move construction away from constructor
     def __init__(self, parent_node, cursor: clang.cindex.Cursor):
         super().__init__(parent_node, cursor)
 
@@ -78,6 +83,7 @@ class ForLoop(Loop):
 
 
 class ForRangeLoop(Loop):
+    # FIXME: move construction away from constructor
     def __init__(self, parent_node, cursor: clang.cindex.Cursor):
         super().__init__(parent_node, cursor)
 
@@ -91,6 +97,7 @@ class ForRangeLoop(Loop):
 
 
 class WhileLoop(Loop):
+    # FIXME: move construction away from constructor
     def __init__(self, parent_node, cursor: clang.cindex.Cursor):
         super().__init__(parent_node, cursor)
 
@@ -104,6 +111,7 @@ class WhileLoop(Loop):
 
 
 class If(Node):
+    # FIXME: move construction away from constructor
     def __init__(self, parent_node, cursor: clang.cindex.Cursor):
         super().__init__(parent_node)
 
@@ -130,24 +138,49 @@ class If(Node):
 
 
 class Function(Node):
-    def __init__(self, parent_node, cursor: clang.cindex.Cursor):
+    # FIXME: move construction away from constructor
+    def __init__(self, parent_node):
         super().__init__(parent_node)
         self.body_nodes = []
+        self.name = ""
+
+    def parse_cpp(self, cursor: clang.cindex.Cursor):
         self.name = cursor.spelling
 
-        print('Constructing function \'' + cursor.spelling + '\' from cursor:')
+        # print('Constructing function \'' + cursor.spelling + '\' from cursor:')
 
         # cursor_dump_rec(cursor, 0, 2)
 
         cursor_children = list(cursor.get_children())
 
-        parse_cursor(self.body_nodes, cursor_children[-1], self)
+        if len(cursor_children) and cursor_children[-1].kind.name == 'COMPOUND_STMT':
+            parse_cursor(self.body_nodes, cursor_children[-1], self)
         # FIXME: parse function arguments
         # FIXME: parse function return
 
-        for i in self.body_nodes:
-            i.print(1)
-        print()
+        # for i in self.body_nodes:
+        #     i.print(1)
+        # print()
+
+
+class Class(Node):
+    def __init__(self, parent_node):
+        super().__init__(parent_node)
+        self.body_nodes = []
+        self.name = ""
+
+    def parse_cpp(self, cursor: clang.cindex.Cursor):
+        self.name = cursor.spelling
+
+        # print('Constructing class \'' + cursor.spelling + '\' from cursor:')
+
+        cursor_children = list(cursor.get_children())
+
+        # FIXME: parse class data (methods are parsed externally)
+
+        # for i in self.body_nodes:
+        #     i.print(1)
+        # print()
 
 
 class FunctionCall:
@@ -168,6 +201,6 @@ class CodeTree:
 
         # TODO: get a dict for all these:
         self.functions = {}
-        # self.classes = []
-        # self.methods = []
-        # self.namespaces = []
+        self.classes = {}
+        self.methods = {}
+        # self.namespaces = {}
