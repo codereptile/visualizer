@@ -1,5 +1,15 @@
 # visualizer (v1.1.0)
 
+This project aims to make a quick visual representation for a C++ project (though Python support is planned).
+
+Possible use-cases:
+
+* Showing visual representation of different code structures for teaching
+* Code dependency analysis
+* Per-function code structure analysis.
+* (PLANNED) Performance analyzing
+* (PLANNED) Unit-test and security analysis
+
 # Instalation:
 ```
 sudo apt install llvm
