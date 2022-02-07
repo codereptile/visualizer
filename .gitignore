@@ -312,4 +312,4 @@ cython_debug/
 
 # End of https://www.toptal.com/developers/gitignore/api/pycharm+all,python,clion+all
 
-sample_code/
+sample_code*
