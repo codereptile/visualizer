@@ -1,4 +1,4 @@
-# visualizer (v1.1.2)
+# visualizer (v1.1.3)
 
 This project aims to make a quick visual representation for a C++ project (though Python support is planned).
 
@@ -21,6 +21,18 @@ sudo apt install libclang-11-dev
 ```shell
 python3 visualizer.py cpp --target examples/segment_tree --scale 0.5
 ```
+
+You can also use `--bruteforce 1` to avoid errors.
+
+## Keyboard control:
+
+UP, DOWN, LEFT, RIGHT - move respectively
+
+0 - increase size (zoom in)
+
+9 - decrease size (zoom out)
+
+## About colors:
 
 ```
 Loops are Red,
@@ -51,10 +63,9 @@ Why not use `<insert your favorite C++ parser>`?
 so only by using a compiler can we get a 100% correct output.
 Easiest example is `operator <<` which in most parsers is registered as a `binary expression`, when in reality it is a `function call`. 
 
-# What's new in v1.1.2?
-* Functions defined in .h files in class are now detected
-* Fixed bug, when functions where doubled in structures
-* Lines always curve up (idk, looks better)
+# What's new in v1.1.3?
+* OMG, FINALLY RESIZE!!! (literally took 10 min to implement, no idea why didn't do it earlier)
+* OMG, FINALLY MOVE AROUND!!! (literally took another 10 min to implement, no idea why didn't do it earlier)
 
 # Known bugs // missing features:
 * Function calls inside Loop and If conditions are not registered

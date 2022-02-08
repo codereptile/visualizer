@@ -48,6 +48,7 @@ def output_verbose(verbose: bool, *args):
 
 class Scaler:
     def __init__(self, initial_scale: float = 1):
+        self.current_scale = initial_scale
         self.MIN_SIZE = 0
         self.FUNCTIONS_ACCESS_SPECIFIER_BUFFER = 0
         self.BUFFER_SIZE_VERTICAL = 0
@@ -60,6 +61,7 @@ class Scaler:
         self.rescale(initial_scale)
 
     def rescale(self, scale: float = 1):
+        self.current_scale = scale
         # TODO: add profiles
         self.MIN_SIZE = max(int(50 * scale), 1)
         self.FUNCTIONS_ACCESS_SPECIFIER_BUFFER = int(10 * scale)

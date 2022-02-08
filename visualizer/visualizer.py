@@ -215,6 +215,9 @@ class Visualizer(arcade.Window):
 
         self.should_redraw = False
         self.a = False
+
+        self.global_offset_x = 100
+        self.global_offset_y = 0
         # FIXME: make this 'a' a proper thing (it's used for showing blocks)
         # TODO: add side-by-side code comparison
 
@@ -249,12 +252,12 @@ class Visualizer(arcade.Window):
         for i in self.parser.code_tree.roots:
             self.compute_node_size(i, self.scaler)
 
-        offset_x = 100
+        tmp_offset_x = 0
 
         for i in self.parser.code_tree.roots:
-            self.compute_node_position(i, self.scaler, offset_x, (self.height - self.graphics_info[i].size_y) // 2)
-            offset_x += self.scaler.OBJECTS_BUFFER
-            offset_x += self.graphics_info[i].size_x
+            self.compute_node_position(i, self.scaler, self.global_offset_x + tmp_offset_x, self.global_offset_y + (self.height - self.graphics_info[i].size_y) // 2)
+            tmp_offset_x += self.scaler.OBJECTS_BUFFER
+            tmp_offset_x += self.graphics_info[i].size_x
 
         for i in self.parser.code_tree.function_calls:
             self.compute_function_call_graphics_info(i)
@@ -496,3 +499,32 @@ class Visualizer(arcade.Window):
 
     def update(self, delta_time):
         pass
+
+    def on_key_press(self, symbol, modifier):
+        should_recalculate = False
+        if symbol == arcade.key.UP:
+            self.global_offset_y -= 50
+            should_recalculate = True
+        elif symbol == arcade.key.DOWN:
+            self.global_offset_y += 50
+            should_recalculate = True
+        elif symbol == arcade.key.RIGHT:
+            self.global_offset_x -= 50
+            should_recalculate = True
+        elif symbol == arcade.key.LEFT:
+            self.global_offset_x += 50
+            should_recalculate = True
+        elif symbol == arcade.key.KEY_0:
+            self.scaler.rescale(self.scaler.current_scale * 1.05)
+            should_recalculate = True
+        elif symbol == arcade.key.KEY_9:
+            self.scaler.rescale(self.scaler.current_scale * 0.95)
+            should_recalculate = True
+
+        # FIXME: probably this should be made more elegant
+        if should_recalculate:
+            self.on_resize(self.width, self.height)
+
+
+
+
