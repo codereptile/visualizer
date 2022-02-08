@@ -88,22 +88,22 @@ class Parser:
 
         diagnostics = list(translation_unit.diagnostics)
         if len(diagnostics):
-            output_error(self.bruteforce, 'FOUND ERRORS:')
+            message = 'FOUND ERRORS:\n'
             for diag in diagnostics:
-                output_error(self.bruteforce, 'Error:')
-                output_error(self.bruteforce, '\tseverity:', diag.severity)
-                output_error(self.bruteforce, '\tlocation:', diag.location)
-                output_error(self.bruteforce, '\tspelling:', diag.spelling)
-                output_error(self.bruteforce, '\tranges:', diag.ranges)
-                output_error(self.bruteforce, '\tfixits:', diag.fixits)
-            # sys.exit(2)
+                message += 'Error:\n'
+                message += '\tseverity:' + str(diag.severity) + '\n'
+                message += '\tlocation:' + str(diag.location) + '\n'
+                message += '\tspelling:' + str(diag.spelling) + '\n'
+                message += '\tranges:' + str(diag.ranges) + '\n'
+                message += '\tfixits:' + str(diag.fixits) + '\n'
+            output_error(self.bruteforce, message)
 
         for cursor in translation_unit.cursor.get_children():
             if not is_file_in_standart(str(cursor.location.file)):
                 if cursor.kind.name == 'FUNCTION_DECL':
                     if self.code_tree.functions.get(cursor.get_usr()) is None:
                         self.code_tree.functions[cursor.get_usr()] = Function(None)
-                    self.code_tree.functions[cursor.get_usr()].parse_cpp(cursor)
+                    self.code_tree.functions[cursor.get_usr()].parse_cpp(cursor, self.bruteforce, self.verbose)
                 elif cursor.kind.name == 'CXX_METHOD':
                     cursor_children = list(cursor.get_children())
                     for i in cursor_children:
@@ -118,15 +118,15 @@ class Parser:
                     if self.code_tree.methods.get(cursor.get_usr()) is None:
                         output_error(self.bruteforce, "Error: Could not create a method!!")
                     else:
-                        self.code_tree.methods[cursor.get_usr()].parse_cpp(cursor)
+                        self.code_tree.methods[cursor.get_usr()].parse_cpp(cursor, self.bruteforce, self.verbose)
                 elif cursor.kind.name == 'CLASS_DECL':
                     if self.code_tree.classes.get(cursor.get_usr()) is None:
                         self.code_tree.classes[cursor.get_usr()] = Class(None)
-                    self.code_tree.classes[cursor.get_usr()].parse_cpp(cursor)
+                    self.code_tree.classes[cursor.get_usr()].parse_cpp(cursor, self.bruteforce, self.verbose)
                 elif cursor.kind.name == 'STRUCT_DECL':
                     if self.code_tree.structures.get(cursor.get_usr()) is None:
                         self.code_tree.structures[cursor.get_usr()] = Struct(None)
-                    self.code_tree.structures[cursor.get_usr()].parse_cpp(cursor, self.code_tree)
+                    self.code_tree.structures[cursor.get_usr()].parse_cpp(cursor, self.code_tree, self.bruteforce, self.verbose)
                 else:
                     output_error(self.bruteforce, "Error: ", cursor.kind.name, " not supported!!")
 

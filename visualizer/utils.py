@@ -33,7 +33,7 @@ def no_print(*args):
 
 def output_error(brute_force: bool, *args):
     if brute_force:
-        red_on_black_print(args)
+        red_on_black_print(*args)
     else:
         s = ''
         for i in args:

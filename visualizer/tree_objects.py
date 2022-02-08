@@ -22,18 +22,18 @@ class CodeTree:
         self.namespaces = {}
 
 
-def parse_cursor(children_nodes, cursor: clang.cindex.Cursor, parent_node):
+def parse_cursor(children_nodes, cursor: clang.cindex.Cursor, parent_node, bruteforce: bool, verbose: bool):
     if cursor.kind.name == 'COMPOUND_STMT':
         for i in cursor.get_children():
-            parse_cursor(children_nodes, i, parent_node)
+            parse_cursor(children_nodes, i, parent_node, bruteforce, verbose)
     elif cursor.kind.name == 'FOR_STMT':
-        children_nodes.append(ForLoop(parent_node, cursor))
+        children_nodes.append(ForLoop(parent_node, cursor, bruteforce, verbose))
     elif cursor.kind.name == 'CXX_FOR_RANGE_STMT':
-        children_nodes.append(ForRangeLoop(parent_node, cursor))
+        children_nodes.append(ForRangeLoop(parent_node, cursor, bruteforce, verbose))
     elif cursor.kind.name == 'WHILE_STMT':
-        children_nodes.append(WhileLoop(parent_node, cursor))
+        children_nodes.append(WhileLoop(parent_node, cursor, bruteforce, verbose))
     elif cursor.kind.name == 'IF_STMT':
-        children_nodes.append(If(parent_node, cursor))
+        children_nodes.append(If(parent_node, cursor, bruteforce, verbose))
     elif cursor.kind.name in ['BINARY_OPERATOR',
                               'CALL_EXPR',
                               'RETURN_STMT',
@@ -41,13 +41,16 @@ def parse_cursor(children_nodes, cursor: clang.cindex.Cursor, parent_node):
                               'UNARY_OPERATOR',
                               'UNEXPOSED_EXPR',
                               'CXX_DELETE_EXPR',
+                              'BREAK_STMT',
+                              'CXX_TRY_STMT',
+                              'COMPOUND_ASSIGNMENT_OPERATOR',
+                              'CXX_UNARY_EXPR',
                               ]:
         if len(children_nodes) == 0 or type(children_nodes[-1]) != CodeBlock:
-            children_nodes.append(CodeBlock(parent_node))
-        children_nodes[-1].add_line(cursor)
+            children_nodes.append(CodeBlock(parent_node, bruteforce, verbose))
+        children_nodes[-1].add_line(cursor, bruteforce, verbose)
     else:
-        # FIXME: pass brute-force
-        output_error(False, "Unknown object: ", cursor.kind.name, " located: ", cursor.location)
+        output_error(bruteforce, "Unknown object: ", cursor.kind.name, " located: ", cursor.location)
 
 
 class Node:
@@ -61,7 +64,7 @@ class Node:
 
 class CodeLine(Node):
     # FIXME: move construction away from constructor
-    def __init__(self, parent_node, cursor: clang.cindex.Cursor):
+    def __init__(self, parent_node, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
         super().__init__(parent_node)
         self.cursor = cursor
 
@@ -71,12 +74,12 @@ class CodeLine(Node):
 
 class CodeBlock(Node):
     # FIXME: move construction away from constructor
-    def __init__(self, parent_node):
+    def __init__(self, parent_node, bruteforce: bool, verbose: bool):
         super().__init__(parent_node)
         self.body_nodes = []
 
-    def add_line(self, cursor: clang.cindex.Cursor):
-        self.body_nodes.append(CodeLine(self, cursor))
+    def add_line(self, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
+        self.body_nodes.append(CodeLine(self, cursor, bruteforce, verbose))
 
     def print(self, depth):
         print('\t' * depth, 'Block of code:')
@@ -86,7 +89,7 @@ class CodeBlock(Node):
 
 class Loop(Node):
     # FIXME: move construction away from constructor
-    def __init__(self, parent_node, cursor: clang.cindex.Cursor):
+    def __init__(self, parent_node, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
         super().__init__(parent_node)
         self.body_nodes = []
 
@@ -97,11 +100,11 @@ class Loop(Node):
 
 class ForLoop(Loop):
     # FIXME: move construction away from constructor
-    def __init__(self, parent_node, cursor: clang.cindex.Cursor):
-        super().__init__(parent_node, cursor)
+    def __init__(self, parent_node, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
+        super().__init__(parent_node, cursor, bruteforce, verbose)
 
         cursor_children = list(cursor.get_children())
-        parse_cursor(self.body_nodes, cursor_children[-1], self)
+        parse_cursor(self.body_nodes, cursor_children[-1], self, bruteforce, verbose)
         # FIXME: make a proper loop arguments parse
 
     def print(self, depth):
@@ -111,11 +114,11 @@ class ForLoop(Loop):
 
 class ForRangeLoop(Loop):
     # FIXME: move construction away from constructor
-    def __init__(self, parent_node, cursor: clang.cindex.Cursor):
-        super().__init__(parent_node, cursor)
+    def __init__(self, parent_node, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
+        super().__init__(parent_node, cursor, bruteforce, verbose)
 
         cursor_children = list(cursor.get_children())
-        parse_cursor(self.body_nodes, cursor_children[-1], self)
+        parse_cursor(self.body_nodes, cursor_children[-1], self, bruteforce, verbose)
         # FIXME: make a proper loop arguments parse
 
     def print(self, depth):
@@ -125,11 +128,11 @@ class ForRangeLoop(Loop):
 
 class WhileLoop(Loop):
     # FIXME: move construction away from constructor
-    def __init__(self, parent_node, cursor: clang.cindex.Cursor):
-        super().__init__(parent_node, cursor)
+    def __init__(self, parent_node, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
+        super().__init__(parent_node, cursor, bruteforce, verbose)
 
         cursor_children = list(cursor.get_children())
-        parse_cursor(self.body_nodes, cursor_children[-1], self)
+        parse_cursor(self.body_nodes, cursor_children[-1], self, bruteforce, verbose)
         # FIXME: make a proper loop arguments parse
 
     def print(self, depth):
@@ -139,7 +142,7 @@ class WhileLoop(Loop):
 
 class If(Node):
     # FIXME: move construction away from constructor
-    def __init__(self, parent_node, cursor: clang.cindex.Cursor):
+    def __init__(self, parent_node, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
         super().__init__(parent_node)
 
         self.body_nodes = []
@@ -150,9 +153,9 @@ class If(Node):
         # FIXME: parse condition
 
         for i in cursor_children[1].get_children():
-            parse_cursor(self.body_nodes, i, self)
+            parse_cursor(self.body_nodes, i, self, bruteforce, verbose)
         if len(cursor_children) == 3:
-            parse_cursor(self.else_nodes, cursor_children[2], self)
+            parse_cursor(self.else_nodes, cursor_children[2], self, bruteforce, verbose)
 
     def print(self, depth):
         print('\t' * depth, 'If:')
@@ -171,13 +174,13 @@ class Function(Node):
         self.body_nodes = []
         self.name = ""
 
-    def parse_cpp(self, cursor: clang.cindex.Cursor):
+    def parse_cpp(self, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
         self.name = cursor.spelling
 
         cursor_children = list(cursor.get_children())
 
         if len(cursor_children) and cursor_children[-1].kind.name == 'COMPOUND_STMT':
-            parse_cursor(self.body_nodes, cursor_children[-1], self)
+            parse_cursor(self.body_nodes, cursor_children[-1], self, bruteforce, verbose)
         # FIXME: parse function arguments
         # FIXME: parse function return
         # TODO: add print method
@@ -189,7 +192,7 @@ class Class(Node):
         self.body_nodes = []
         self.name = ""
 
-    def parse_cpp(self, cursor: clang.cindex.Cursor):
+    def parse_cpp(self, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
         self.name = cursor.spelling
 
         # FIXME: parse class data (methods are parsed externally)
@@ -202,7 +205,7 @@ class Struct(Node):
         self.body_nodes = []
         self.name = ""
 
-    def parse_cpp(self, cursor: clang.cindex.Cursor, code_tree: CodeTree):
+    def parse_cpp(self, cursor: clang.cindex.Cursor, code_tree: CodeTree, bruteforce: bool, verbose: bool):
         self.name = cursor.spelling
 
         # cursor_dump_rec(cursor, 0, 2)
@@ -217,7 +220,7 @@ class Struct(Node):
             elif i.kind.name == 'CXX_METHOD':
                 code_tree.methods[i.get_usr()] = Function(self)
                 self.body_nodes.append(code_tree.methods[i.get_usr()])
-                code_tree.methods[i.get_usr()].parse_cpp(i)
+                code_tree.methods[i.get_usr()].parse_cpp(i, bruteforce, verbose)
             else:
                 output_error(False, "Unknown structure field: ", i.kind.name)
 
