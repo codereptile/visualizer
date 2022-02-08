@@ -84,7 +84,7 @@ class Parser:
 
     def parse_cpp_file(self, file_path: str) -> None:
         index = clang.cindex.Index.create()
-        translation_unit = index.parse(file_path, args=[])
+        translation_unit = index.parse(file_path, args=['-std=c++2a'])
 
         diagnostics = list(translation_unit.diagnostics)
         if len(diagnostics):

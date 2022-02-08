@@ -1,4 +1,4 @@
-# visualizer (v1.1.1a)
+# visualizer (v1.1.1b)
 
 This project aims to make a quick visual representation for a C++ project (though Python support is planned).
 

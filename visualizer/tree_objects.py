@@ -221,8 +221,14 @@ class Struct(Node):
                 code_tree.methods[i.get_usr()] = Function(self)
                 self.body_nodes.append(code_tree.methods[i.get_usr()])
                 code_tree.methods[i.get_usr()].parse_cpp(i, bruteforce, verbose)
+            elif i.kind.name == 'CXX_BASE_SPECIFIER':
+                pass
+                # TODO: parse base specifier
+            elif i.kind.name == 'USING_DECLARATION':
+                pass
+                # TODO: parse using declarations
             else:
-                output_error(False, "Unknown structure field: ", i.kind.name)
+                output_error(bruteforce, "Unknown structure field: ", i.kind.name, " location: ", i.location)
 
         # TODO: add print method
 
