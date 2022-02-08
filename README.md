@@ -82,3 +82,4 @@ Easiest example is `operator <<` which in most parsers is registered as a `binar
 * No way to add libraries that shouldn't be rendered
 * No switch case support
 * Operator calls are not detected, even if they are user-defined
+* On large projects moving/resizing is quite CPU-intensive and takes significant time 
