@@ -2,6 +2,24 @@ import sys
 
 import clang.cindex
 from .cpp_specific_functions import *
+from .utils import *
+
+
+class CodeTree:
+    def __init__(self):
+        # list of all independent objects
+        self.roots = []
+
+        # list of all objects
+        self.nodes = []
+
+        self.function_calls = []
+
+        self.functions = {}
+        self.classes = {}
+        self.structures = {}
+        self.methods = {}
+        self.namespaces = {}
 
 
 def parse_cursor(children_nodes, cursor: clang.cindex.Cursor, parent_node):
@@ -16,11 +34,20 @@ def parse_cursor(children_nodes, cursor: clang.cindex.Cursor, parent_node):
         children_nodes.append(WhileLoop(parent_node, cursor))
     elif cursor.kind.name == 'IF_STMT':
         children_nodes.append(If(parent_node, cursor))
-    else:
+    elif cursor.kind.name in ['BINARY_OPERATOR',
+                              'CALL_EXPR',
+                              'RETURN_STMT',
+                              'DECL_STMT',
+                              'UNARY_OPERATOR',
+                              'UNEXPOSED_EXPR',
+                              'CXX_DELETE_EXPR',
+                              ]:
         if len(children_nodes) == 0 or type(children_nodes[-1]) != CodeBlock:
             children_nodes.append(CodeBlock(parent_node))
         children_nodes[-1].add_line(cursor)
-    # print('\t', cursor.kind)
+    else:
+        # FIXME: pass brute-force
+        output_error(False, "Unknown object: ", cursor.kind.name, " located: ", cursor.location)
 
 
 class Node:
@@ -147,20 +174,13 @@ class Function(Node):
     def parse_cpp(self, cursor: clang.cindex.Cursor):
         self.name = cursor.spelling
 
-        # print('Constructing function \'' + cursor.spelling + '\' from cursor:')
-
-        # cursor_dump_rec(cursor, 0, 2)
-
         cursor_children = list(cursor.get_children())
 
         if len(cursor_children) and cursor_children[-1].kind.name == 'COMPOUND_STMT':
             parse_cursor(self.body_nodes, cursor_children[-1], self)
         # FIXME: parse function arguments
         # FIXME: parse function return
-
-        # for i in self.body_nodes:
-        #     i.print(1)
-        # print()
+        # TODO: add print method
 
 
 class Class(Node):
@@ -172,35 +192,39 @@ class Class(Node):
     def parse_cpp(self, cursor: clang.cindex.Cursor):
         self.name = cursor.spelling
 
-        # print('Constructing class \'' + cursor.spelling + '\' from cursor:')
-
-        cursor_children = list(cursor.get_children())
-
         # FIXME: parse class data (methods are parsed externally)
+        # TODO: add print method
 
-        # for i in self.body_nodes:
-        #     i.print(1)
-        # print()
+
+class Struct(Node):
+    def __init__(self, parent_node):
+        super().__init__(parent_node)
+        self.body_nodes = []
+        self.name = ""
+
+    def parse_cpp(self, cursor: clang.cindex.Cursor, code_tree: CodeTree):
+        self.name = cursor.spelling
+
+        # cursor_dump_rec(cursor, 0, 2)
+
+        for i in cursor.get_children():
+            if i.kind.name == 'FIELD_DECL':
+                pass
+                # TODO: parse field declarations
+            elif i.kind.name == 'CONSTRUCTOR':
+                pass
+                # TODO: parse struct constructor
+            elif i.kind.name == 'CXX_METHOD':
+                code_tree.methods[i.get_usr()] = Function(self)
+                self.body_nodes.append(code_tree.methods[i.get_usr()])
+                code_tree.methods[i.get_usr()].parse_cpp(i)
+            else:
+                output_error(False, "Unknown structure field: ", i.kind.name)
+
+        # TODO: add print method
 
 
 class FunctionCall:
     def __init__(self, source, target=None):
         self.source = source
         self.target = target
-
-
-class CodeTree:
-    def __init__(self):
-        # list of all independent objects
-        self.roots = []
-
-        # list of all objects
-        self.nodes = []
-
-        self.function_calls = []
-
-        # TODO: get a dict for all these:
-        self.functions = {}
-        self.classes = {}
-        self.methods = {}
-        # self.namespaces = {}

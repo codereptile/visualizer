@@ -85,29 +85,26 @@ def cursor_dump_short(cursor):
             "\tusr:", cursor.get_usr())
 
 
-def cursor_dump_rec(cursor, depth=0, cap=1e9):
+def cursor_dump_rec(cursor, depth=0, cap=1e9, print_ref: bool = True):
     if cursor is None:
         return
     if depth >= cap:
         return
-    # info_print(depth * "\t",
-    #            "id:", cursor,
-    #            "kind:", cursor.kind,
-    #            "\tspelling:", cursor.spelling,
-    #            "\ttype:", cursor.type.spelling,
-    #            # "\taccess_specifier:", cursor.access_specifier,
-    #            # "\textent:", cursor.extent,
-    #            # "\tin file:", cursor.location.file,
-    #            "\tusr:", cursor.get_usr(),
-    #            )
     info_print(depth * "\t",
+               "id:", cursor,
                "kind:", cursor.kind,
                "\tspelling:", cursor.spelling,
+               "\ttype:", cursor.type.spelling,
+               "\taccess_specifier:", cursor.access_specifier,
+               "\textent:", cursor.extent,
+               # "\tin file:", cursor.location.file,
                "\tusr:", cursor.get_usr(),
                )
-    if cursor.kind.name == 'TYPE_REF' or cursor.kind.name == 'MEMBER_REF_EXPR' or cursor.kind.name == 'UNEXPOSED_EXPR':
+    if print_ref and (cursor.kind.name == 'TYPE_REF' or
+                      cursor.kind.name == 'MEMBER_REF_EXPR' or
+                      cursor.kind.name == 'UNEXPOSED_EXPR'):
         cursor_dump(cursor.referenced)
 
     # cursor_dump(cursor.get_definition())
     for child in cursor.get_children():
-        cursor_dump_rec(child, depth + 1, cap)
+        cursor_dump_rec(child, depth + 1, cap, print_ref)

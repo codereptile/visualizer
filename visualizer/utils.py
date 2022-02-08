@@ -1,4 +1,5 @@
-def error_print(*args):
+# TODO: make debug prints proper
+def red_on_black_print(*args):
     print("\x1B[31;40m", end="")
     for i in args:
         print(i, end=" ")
@@ -6,6 +7,13 @@ def error_print(*args):
 
 
 def info_print(*args):
+    print("\x1B[34;1m", end="")
+    for i in args:
+        print(i, end=" ")
+    print("\x1B[0m")
+
+
+def green_on_black_print(*args):
     print("\x1B[32;40m", end="")
     for i in args:
         print(i, end=" ")
@@ -21,6 +29,21 @@ def extra_print(*args):
 
 def no_print(*args):
     pass
+
+
+def output_error(brute_force: bool, *args):
+    if brute_force:
+        red_on_black_print(args)
+    else:
+        s = ''
+        for i in args:
+            s += str(i)
+        raise RuntimeError(s)
+
+
+def output_verbose(verbose: bool, *args):
+    if verbose:
+        info_print(args)
 
 
 class Scaler:
@@ -40,9 +63,9 @@ class Scaler:
         # TODO: add profiles
         self.MIN_SIZE = max(int(50 * scale), 1)
         self.FUNCTIONS_ACCESS_SPECIFIER_BUFFER = int(10 * scale)
-        self.BUFFER_SIZE_VERTICAL = int(50 * scale)
+        self.BUFFER_SIZE_VERTICAL = int(20 * scale)
         self.BUFFER_SIZE_CLASS_VERTICAL = int(100 * scale)
-        self.BUFFER_SIZE_HORIZONTAL = int(50 * scale)
+        self.BUFFER_SIZE_HORIZONTAL = int(20 * scale)
         self.OBJECTS_BUFFER = int(400 * scale)
         self.LINE_WIDTH = max(int(10 * scale), 1)
 

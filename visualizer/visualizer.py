@@ -22,12 +22,18 @@ class Parser:
     def __init__(self):
         self.target = None
         self.code_tree = CodeTree()
+        # If True, attempts to ignore all errors and visualize as much as possible
+        self.bruteforce = False
+        self.verbose = False
 
-    def parse(self, target: str, mode: ParseModes) -> None:
+    def parse(self, target: str, mode: ParseModes, bruteforce: bool, verbose: bool) -> None:
+        self.bruteforce = bruteforce
+        self.verbose = verbose
+
         self.target = os.path.abspath(target)
 
         if mode == ParseModes.PYTHON:
-            print('Python code parsing is not implemented yet')
+            red_on_black_print('Python code parsing is not implemented yet')
             sys.exit(1)
         elif mode == ParseModes.CPP:
             self.parse_cpp()
@@ -36,12 +42,34 @@ class Parser:
             #  (make parsing outside of class constructors)
             raise RuntimeError('Invalid mode given')
 
+        output_verbose(self.verbose, "-------------------------------")
+        for i in self.code_tree.functions:
+            if len(self.code_tree.functions[i].body_nodes) > 0:
+                output_verbose(self.verbose, "Found function", i, self.code_tree.functions[i])
+                self.code_tree.roots.append(self.code_tree.functions[i])
+                self.detect_all_objects(self.code_tree.functions[i])
+        for i in self.code_tree.methods:
+            if len(self.code_tree.methods[i].body_nodes) > 0:
+                output_verbose(self.verbose, "Found method", i, self.code_tree.methods[i])
+                self.detect_all_objects(self.code_tree.methods[i])
+        for i in self.code_tree.classes:
+            if len(self.code_tree.classes[i].body_nodes) > 0:
+                output_verbose(self.verbose, "Found class", i, self.code_tree.classes[i])
+                self.code_tree.roots.append(self.code_tree.classes[i])
+                self.detect_all_objects(self.code_tree.classes[i])
+        for i in self.code_tree.structures:
+            if len(self.code_tree.structures[i].body_nodes) > 0:
+                output_verbose(self.verbose, "Found structure", i, self.code_tree.structures[i])
+                self.code_tree.roots.append(self.code_tree.structures[i])
+                self.detect_all_objects(self.code_tree.structures[i])
+        output_verbose(self.verbose, "-------------------------------")
+
         for i in self.code_tree.nodes:
             self.detect_if_function_call(i)
 
     def parse_cpp(self) -> None:
         if not os.path.isdir(self.target):
-            print('Given target is not a directory')
+            red_on_black_print('Given target is not a directory')
             sys.exit(1)
 
         print("Processing DIR:\t", self.target)
@@ -53,21 +81,6 @@ class Parser:
                     self.parse_cpp_file(root + '/' + file_name)
                 else:
                     print("Found Not C++:\t", root + '/' + file_name)
-        # FIXME: make cross-file scan for function decl/def and similar
-
-        print("-------------------------------")
-        for i in self.code_tree.functions:
-            print("Found function", i, self.code_tree.functions[i])
-            self.code_tree.roots.append(self.code_tree.functions[i])
-            self.detect_all_objects(self.code_tree.functions[i])
-        for i in self.code_tree.classes:
-            print("Found class", i, self.code_tree.classes[i])
-            self.code_tree.roots.append(self.code_tree.classes[i])
-            self.detect_all_objects(self.code_tree.classes[i])
-        for i in self.code_tree.methods:
-            print("Found method", i, self.code_tree.methods[i])
-            self.detect_all_objects(self.code_tree.methods[i])
-        print("-------------------------------")
 
     def parse_cpp_file(self, file_path: str) -> None:
         index = clang.cindex.Index.create()
@@ -75,28 +88,22 @@ class Parser:
 
         diagnostics = list(translation_unit.diagnostics)
         if len(diagnostics):
-            error_print('FOUND ERRORS:')
+            output_error(self.bruteforce, 'FOUND ERRORS:')
             for diag in diagnostics:
-                error_print('Error:')
-                error_print('\tseverity:', diag.severity)
-                error_print('\tlocation:', diag.location)
-                error_print('\tspelling:', diag.spelling)
-                error_print('\tranges:', diag.ranges)
-                error_print('\tfixits:', diag.fixits)
+                output_error(self.bruteforce, 'Error:')
+                output_error(self.bruteforce, '\tseverity:', diag.severity)
+                output_error(self.bruteforce, '\tlocation:', diag.location)
+                output_error(self.bruteforce, '\tspelling:', diag.spelling)
+                output_error(self.bruteforce, '\tranges:', diag.ranges)
+                output_error(self.bruteforce, '\tfixits:', diag.fixits)
             # sys.exit(2)
 
         for cursor in translation_unit.cursor.get_children():
             if not is_file_in_standart(str(cursor.location.file)):
-                # cursor_dump_short(cursor)
-                # cursor_dump_rec(cursor)
                 if cursor.kind.name == 'FUNCTION_DECL':
                     if self.code_tree.functions.get(cursor.get_usr()) is None:
                         self.code_tree.functions[cursor.get_usr()] = Function(None)
                     self.code_tree.functions[cursor.get_usr()].parse_cpp(cursor)
-                elif cursor.kind.name == 'CLASS_DECL':
-                    if self.code_tree.classes.get(cursor.get_usr()) is None:
-                        self.code_tree.classes[cursor.get_usr()] = Class(None)
-                    self.code_tree.classes[cursor.get_usr()].parse_cpp(cursor)
                 elif cursor.kind.name == 'CXX_METHOD':
                     cursor_children = list(cursor.get_children())
                     for i in cursor_children:
@@ -108,16 +115,20 @@ class Parser:
                                     self.code_tree.classes.get(class_parent_usr))
                                 self.code_tree.classes.get(class_parent_usr).body_nodes.append(
                                     self.code_tree.methods[cursor.get_usr()])
-
                     if self.code_tree.methods.get(cursor.get_usr()) is None:
-                        raise RuntimeError("Could not create a method")
-                    self.code_tree.methods[cursor.get_usr()].parse_cpp(cursor)
-
+                        output_error(self.bruteforce, "Error: Could not create a method!!")
+                    else:
+                        self.code_tree.methods[cursor.get_usr()].parse_cpp(cursor)
+                elif cursor.kind.name == 'CLASS_DECL':
+                    if self.code_tree.classes.get(cursor.get_usr()) is None:
+                        self.code_tree.classes[cursor.get_usr()] = Class(None)
+                    self.code_tree.classes[cursor.get_usr()].parse_cpp(cursor)
+                elif cursor.kind.name == 'STRUCT_DECL':
+                    if self.code_tree.structures.get(cursor.get_usr()) is None:
+                        self.code_tree.structures[cursor.get_usr()] = Struct(None)
+                    self.code_tree.structures[cursor.get_usr()].parse_cpp(cursor, self.code_tree)
                 else:
-                    # cursor_dump(cursor)
-                    print("Warning,", cursor.kind.name, "not supported!!")
-
-            # cursor_dump(cursor)
+                    output_error(self.bruteforce, "Error: ", cursor.kind.name, " not supported!!")
 
     def detect_all_objects(self, node):
         self.code_tree.nodes.append(node)
@@ -137,8 +148,9 @@ class Parser:
     def check_cursor_for_function_calls(self, node, cursor):
         if cursor.kind.name == 'CALL_EXPR':
             cursor_children = list(cursor.get_children())
-            if len(cursor_children) and (cursor_children[0].kind.name == 'MEMBER_REF_EXPR' or cursor_children[
-                0].kind.name == 'UNEXPOSED_EXPR') and cursor_children[0].referenced is not None:
+            if len(cursor_children) and (cursor_children[0].kind.name == 'MEMBER_REF_EXPR' or
+                                         cursor_children[0].kind.name == 'UNEXPOSED_EXPR') \
+                    and cursor_children[0].referenced is not None:
                 if self.code_tree.functions.get(cursor_children[0].referenced.get_usr()) is not None:
                     self.code_tree.function_calls.append(
                         FunctionCall(node, self.code_tree.functions.get(cursor_children[0].referenced.get_usr())))
@@ -146,7 +158,8 @@ class Parser:
                     self.code_tree.function_calls.append(
                         FunctionCall(node, self.code_tree.methods.get(cursor_children[0].referenced.get_usr())))
                 else:
-                    error_print("Couldn't find function: ", cursor_children[0].referenced.get_usr())
+                    output_verbose(self.verbose, "Couldn't find called function: ",
+                                   cursor_children[0].referenced.get_usr())
             else:
                 # FIXME: do smth here
                 # FIXME: add support for class constructor calls detection
@@ -212,8 +225,8 @@ class Visualizer(arcade.Window):
                 for i in node.else_nodes:
                     self.set_graphics_info(i)
 
-    def parse(self, target: str, mode: ParseModes) -> None:
-        self.parser.parse(target, mode)
+    def parse(self, target: str, mode: ParseModes, bruteforce: bool, verbose: bool) -> None:
+        self.parser.parse(target, mode, bruteforce, verbose)
         # FIXME: make one loop instead of two to reduce code duplicates
         for i in self.parser.code_tree.roots:
             self.set_graphics_info(i)
@@ -305,6 +318,15 @@ class Visualizer(arcade.Window):
                 self.graphics_info[node].size_y += self.graphics_info[i].size_y
                 self.graphics_info[node].size_x = max(self.graphics_info[node].size_x,
                                                       self.graphics_info[i].size_x + scaler.BUFFER_SIZE_HORIZONTAL * 2)
+        elif type(node) == Struct:
+            self.graphics_info[node].size_x = 0
+            self.graphics_info[node].size_y = 0 + scaler.BUFFER_SIZE_CLASS_VERTICAL * (len(node.body_nodes) + 1)
+            # calculate new size:
+            for i in node.body_nodes:
+                self.compute_node_size(i, scaler)
+                self.graphics_info[node].size_y += self.graphics_info[i].size_y
+                self.graphics_info[node].size_x = max(self.graphics_info[node].size_x,
+                                                      self.graphics_info[i].size_x + scaler.BUFFER_SIZE_HORIZONTAL * 2)
         else:
             raise RuntimeError("unknown type:", type(node))
 
@@ -354,6 +376,13 @@ class Visualizer(arcade.Window):
                 offset_y -= scaler.BUFFER_SIZE_CLASS_VERTICAL
                 offset_y -= self.graphics_info[i].size_y
                 self.compute_node_position(i, scaler, offset_x, offset_y)
+        elif type(node) == Struct:
+            offset_y += self.graphics_info[node].size_y
+            offset_x += scaler.BUFFER_SIZE_HORIZONTAL
+            for i in node.body_nodes:
+                offset_y -= scaler.BUFFER_SIZE_CLASS_VERTICAL
+                offset_y -= self.graphics_info[i].size_y
+                self.compute_node_position(i, scaler, offset_x, offset_y)
         else:
             raise RuntimeError("unknown type:", type(node))
 
@@ -391,7 +420,7 @@ class Visualizer(arcade.Window):
                                self.graphics_info[node].end_pos_x)
                 y = quadBezier(t, self.graphics_info[node].start_pos_y,
                                (self.graphics_info[node].start_pos_y + self.graphics_info[node].end_pos_y) // 2 +
-                               perp_v[0] * self.scaler.LINE_CURVATURE,
+                               perp_v[1] * self.scaler.LINE_CURVATURE,
                                self.graphics_info[node].end_pos_y)
                 arcade.draw_line(prev_point_x, prev_point_y,
                                  x, y,
@@ -416,6 +445,8 @@ class Visualizer(arcade.Window):
             if not self.a:
                 color = (0, 0, 0, 0)
         elif type(node) == Class:
+            color = (50, 50, 50)
+        elif type(node) == Struct:
             color = (75, 75, 75)
         # FIXME: use draw_xywh_rectangle_filled
         arcade.draw_rectangle_filled(self.graphics_info[node].pos_x + self.graphics_info[node].size_x / 2,
