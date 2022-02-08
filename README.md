@@ -54,7 +54,7 @@ Easiest example is `operator <<` which in most parsers is registered as a `binar
 # What's new in v1.1.2?
 * Functions defined in .h files in class are now detected
 * Fixed bug, when functions where doubled in structures
-* Lines always curve (idk, looks better)
+* Lines always curve up (idk, looks better)
 
 # Known bugs // missing features:
 * Function calls inside Loop and If conditions are not registered
