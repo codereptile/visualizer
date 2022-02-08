@@ -122,11 +122,13 @@ class Parser:
                 elif cursor.kind.name == 'CLASS_DECL':
                     if self.code_tree.classes.get(cursor.get_usr()) is None:
                         self.code_tree.classes[cursor.get_usr()] = Class(None)
-                    self.code_tree.classes[cursor.get_usr()].parse_cpp(cursor, self.bruteforce, self.verbose)
+                    self.code_tree.classes[cursor.get_usr()].parse_cpp(cursor, self.code_tree, self.bruteforce,
+                                                                       self.verbose)
                 elif cursor.kind.name == 'STRUCT_DECL':
                     if self.code_tree.structures.get(cursor.get_usr()) is None:
                         self.code_tree.structures[cursor.get_usr()] = Struct(None)
-                    self.code_tree.structures[cursor.get_usr()].parse_cpp(cursor, self.code_tree, self.bruteforce, self.verbose)
+                    self.code_tree.structures[cursor.get_usr()].parse_cpp(cursor, self.code_tree, self.bruteforce,
+                                                                          self.verbose)
                 else:
                     output_error(self.bruteforce, "Error: ", cursor.kind.name, " not supported!!")
 
@@ -134,7 +136,11 @@ class Parser:
         self.code_tree.nodes.append(node)
         if type(node) != CodeLine:
             for i in node.body_nodes:
-                self.detect_all_objects(i)
+                if type(i) == str:
+                    # this is a dictionary
+                    self.detect_all_objects(node.body_nodes[i])
+                else:
+                    self.detect_all_objects(i)
             if type(node) == If:
                 for i in node.else_nodes:
                     self.detect_all_objects(i)
@@ -219,7 +225,12 @@ class Visualizer(arcade.Window):
         self.graphics_info[node] = NodeGraphicsInfo(node)
         if type(node) != CodeLine:
             for i in node.body_nodes:
-                self.set_graphics_info(i)
+                if type(i) == str:
+                    # this is a dictionary
+                    self.set_graphics_info(node.body_nodes[i])
+                else:
+                    self.set_graphics_info(i)
+
             # FIXME: probably this if type(node) == If thing should have a more elegant solution
             if type(node) == If:
                 for i in node.else_nodes:
@@ -314,19 +325,22 @@ class Visualizer(arcade.Window):
             self.graphics_info[node].size_y = 0 + scaler.BUFFER_SIZE_CLASS_VERTICAL * (len(node.body_nodes) + 1)
             # calculate new size:
             for i in node.body_nodes:
-                self.compute_node_size(i, scaler)
-                self.graphics_info[node].size_y += self.graphics_info[i].size_y
+                self.compute_node_size(node.body_nodes[i], scaler)
+                self.graphics_info[node].size_y += self.graphics_info[node.body_nodes[i]].size_y
                 self.graphics_info[node].size_x = max(self.graphics_info[node].size_x,
-                                                      self.graphics_info[i].size_x + scaler.BUFFER_SIZE_HORIZONTAL * 2)
+                                                      self.graphics_info[node.body_nodes[i]].size_x +
+                                                      scaler.BUFFER_SIZE_HORIZONTAL * 2)
+
         elif type(node) == Struct:
             self.graphics_info[node].size_x = 0
             self.graphics_info[node].size_y = 0 + scaler.BUFFER_SIZE_CLASS_VERTICAL * (len(node.body_nodes) + 1)
             # calculate new size:
             for i in node.body_nodes:
-                self.compute_node_size(i, scaler)
-                self.graphics_info[node].size_y += self.graphics_info[i].size_y
+                self.compute_node_size(node.body_nodes[i], scaler)
+                self.graphics_info[node].size_y += self.graphics_info[node.body_nodes[i]].size_y
                 self.graphics_info[node].size_x = max(self.graphics_info[node].size_x,
-                                                      self.graphics_info[i].size_x + scaler.BUFFER_SIZE_HORIZONTAL * 2)
+                                                      self.graphics_info[node.body_nodes[i]].size_x +
+                                                      scaler.BUFFER_SIZE_HORIZONTAL * 2)
         else:
             raise RuntimeError("unknown type:", type(node))
 
@@ -374,15 +388,15 @@ class Visualizer(arcade.Window):
             offset_x += scaler.BUFFER_SIZE_HORIZONTAL
             for i in node.body_nodes:
                 offset_y -= scaler.BUFFER_SIZE_CLASS_VERTICAL
-                offset_y -= self.graphics_info[i].size_y
-                self.compute_node_position(i, scaler, offset_x, offset_y)
+                offset_y -= self.graphics_info[node.body_nodes[i]].size_y
+                self.compute_node_position(node.body_nodes[i], scaler, offset_x, offset_y)
         elif type(node) == Struct:
             offset_y += self.graphics_info[node].size_y
             offset_x += scaler.BUFFER_SIZE_HORIZONTAL
             for i in node.body_nodes:
                 offset_y -= scaler.BUFFER_SIZE_CLASS_VERTICAL
-                offset_y -= self.graphics_info[i].size_y
-                self.compute_node_position(i, scaler, offset_x, offset_y)
+                offset_y -= self.graphics_info[node.body_nodes[i]].size_y
+                self.compute_node_position(node.body_nodes[i], scaler, offset_x, offset_y)
         else:
             raise RuntimeError("unknown type:", type(node))
 
@@ -410,17 +424,21 @@ class Visualizer(arcade.Window):
             prev_point_x = self.graphics_info[node].start_pos_x
             prev_point_y = self.graphics_info[node].start_pos_y
 
+            curvature_sign = 1
+            if self.graphics_info[node].end_pos_x - self.graphics_info[node].start_pos_x > 0:
+                curvature_sign = -1
+
             while t < 1.001:
                 v = [self.graphics_info[node].end_pos_x - self.graphics_info[node].start_pos_x,
                      self.graphics_info[node].end_pos_y - self.graphics_info[node].start_pos_y]
                 perp_v = [v[1], -v[0]]
                 x = quadBezier(t, self.graphics_info[node].start_pos_x,
                                (self.graphics_info[node].start_pos_x + self.graphics_info[node].end_pos_x) // 2 +
-                               perp_v[0] * self.scaler.LINE_CURVATURE,
+                               perp_v[0] * self.scaler.LINE_CURVATURE * curvature_sign,
                                self.graphics_info[node].end_pos_x)
                 y = quadBezier(t, self.graphics_info[node].start_pos_y,
                                (self.graphics_info[node].start_pos_y + self.graphics_info[node].end_pos_y) // 2 +
-                               perp_v[1] * self.scaler.LINE_CURVATURE,
+                               perp_v[1] * self.scaler.LINE_CURVATURE * curvature_sign,
                                self.graphics_info[node].end_pos_y)
                 arcade.draw_line(prev_point_x, prev_point_y,
                                  x, y,
@@ -459,8 +477,14 @@ class Visualizer(arcade.Window):
         if type(node) != CodeLine:
             offset_y = 0
             for i in node.body_nodes:
-                self.recursive_node_draw(i)
-                offset_y += self.graphics_info[i].size_y + self.scaler.BUFFER_SIZE_VERTICAL
+                if type(i) == str:
+                    # this is a dictionary
+                    self.recursive_node_draw(node.body_nodes[i])
+                    offset_y += self.graphics_info[node.body_nodes[i]].size_y + self.scaler.BUFFER_SIZE_VERTICAL
+                else:
+                    self.recursive_node_draw(i)
+                    offset_y += self.graphics_info[i].size_y + self.scaler.BUFFER_SIZE_VERTICAL
+
             if type(node) == If and node.else_nodes:
                 arcade.draw_line(self.graphics_info[node].pos_x,
                                  self.graphics_info[node].pos_y + self.graphics_info[node].size_y - offset_y,

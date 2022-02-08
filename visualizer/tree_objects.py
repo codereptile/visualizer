@@ -189,20 +189,35 @@ class Function(Node):
 class Class(Node):
     def __init__(self, parent_node):
         super().__init__(parent_node)
-        self.body_nodes = []
+        self.body_nodes = {}
         self.name = ""
 
-    def parse_cpp(self, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
+    def parse_cpp(self, cursor: clang.cindex.Cursor, code_tree: CodeTree, bruteforce: bool, verbose: bool):
         self.name = cursor.spelling
 
-        # FIXME: parse class data (methods are parsed externally)
+        for i in cursor.get_children():
+            if i.kind.name == 'FIELD_DECL':
+                pass
+                # TODO: parse field declarations
+            elif i.kind.name == 'CONSTRUCTOR':
+                pass
+                # TODO: parse struct constructor
+            elif i.kind.name == 'CXX_METHOD':
+                code_tree.methods[i.get_usr()] = Function(self)
+                self.body_nodes[i.get_usr()] = code_tree.methods[i.get_usr()]
+                code_tree.methods[i.get_usr()].parse_cpp(i, bruteforce, verbose)
+            elif i.kind.name == 'CXX_ACCESS_SPEC_DECL':
+                pass
+                # nothing should be here, access specifiers are taken from methods themselves
+            else:
+                output_error(bruteforce, "Unknown class field: ", i.kind.name, " location: ", i.location)
         # TODO: add print method
 
 
 class Struct(Node):
     def __init__(self, parent_node):
         super().__init__(parent_node)
-        self.body_nodes = []
+        self.body_nodes = {}
         self.name = ""
 
     def parse_cpp(self, cursor: clang.cindex.Cursor, code_tree: CodeTree, bruteforce: bool, verbose: bool):
@@ -219,7 +234,7 @@ class Struct(Node):
                 # TODO: parse struct constructor
             elif i.kind.name == 'CXX_METHOD':
                 code_tree.methods[i.get_usr()] = Function(self)
-                self.body_nodes.append(code_tree.methods[i.get_usr()])
+                self.body_nodes[i.get_usr()] = code_tree.methods[i.get_usr()]
                 code_tree.methods[i.get_usr()].parse_cpp(i, bruteforce, verbose)
             elif i.kind.name == 'CXX_BASE_SPECIFIER':
                 pass

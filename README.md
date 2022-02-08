@@ -1,4 +1,4 @@
-# visualizer (v1.1.1b)
+# visualizer (v1.1.2)
 
 This project aims to make a quick visual representation for a C++ project (though Python support is planned).
 
@@ -51,11 +51,10 @@ Why not use `<insert your favorite C++ parser>`?
 so only by using a compiler can we get a 100% correct output.
 Easiest example is `operator <<` which in most parsers is registered as a `binary expression`, when in reality it is a `function call`. 
 
-# What's new in v1.1.1?
-* Curved lines fix
-* Only showing correctly parsed functions / classes
-* Support for 'brute-force' mode and 'verbose mode'
-* Struct support
+# What's new in v1.1.2?
+* Functions defined in .h files in class are now detected
+* Fixed bug, when functions where doubled in structures
+* Lines always curve (idk, looks better)
 
 # Known bugs // missing features:
 * Function calls inside Loop and If conditions are not registered
@@ -65,11 +64,10 @@ Easiest example is `operator <<` which in most parsers is registered as a `binar
 * No way to see how many times a function is called from a single line
 * No support for outside-of-function code
 * No way to resize/move in editor
-* No struct support
 * 5000 tonnes of useless debug output with no way to shut it off
 * It's hard to tell code structure if there are many If statements
-* Class constructors are not registered as function calls
-* If a function is defined in .h, it's not detected
+* Class / struct constructors are not registered as function calls
 * **If an included library is not found, some code may be absent!!! (this can be partually avoided by commenting the problematic include)**
 * No way to add libraries that shouldn't be rendered
 * No switch case support
+* Operator calls are not detected, even if they are user-defined
