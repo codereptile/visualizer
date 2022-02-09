@@ -14,7 +14,7 @@
 </div>
 
 
-
+## Description:
 
 This project aims to make a quick visual representation for a C++ project (though Python support is planned).
 
@@ -26,13 +26,15 @@ Possible use-cases:
 * (PLANNED) Performance analyzing
 * (PLANNED) Unit-test and security analysis
 
-# Instalation:
+## Instalation:
 ```
 sudo apt install llvm
 sudo apt install libclang-11-dev
+git clone git@github.com:codereptile/visualizer.git
+pip3 install -r requirements.txt
 ```
 
-# General usage:
+## General usage:
 
 ```shell
 python3 visualizer.py cpp --target examples/segment_tree --scale 0.5
@@ -59,13 +61,13 @@ And so are you.
 Btw, Functions are Grey, Ifs are green with a black line separating main statement and else.
 All other black lines are function calls.
 
-# Examples:
+## Examples:
 
-## [Segment tree](https://github.com/codereptile/visualizer/blob/main/examples/segment_tree/code.cpp):
+### [Segment tree](https://github.com/codereptile/visualizer/blob/main/examples/segment_tree/code.cpp):
 
 ![screenshot](https://github.com/codereptile/visualizer/blob/main/examples/segment_tree/image.webp)
 
-# FAQ:
+## FAQ:
 
 
 What are you using for parsing C++?
@@ -79,7 +81,7 @@ Why not use `<insert your favorite C++ parser>`?
 so only by using a compiler can we get a 100% correct output.
 Easiest example is `operator <<` which in most parsers is registered as a `binary expression`, when in reality it is a `function call`. 
 
-# Known bugs // missing features:
+## Known bugs // missing features:
 * Function calls inside Loop and If conditions are not registered
 * No way to see actual code from visualizer
 * Function arguments not registered
