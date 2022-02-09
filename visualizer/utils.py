@@ -43,7 +43,7 @@ def output_error(brute_force: bool, *args):
 
 def output_verbose(verbose: bool, *args):
     if verbose:
-        info_print(args)
+        info_print(*args)
 
 
 class Scaler:

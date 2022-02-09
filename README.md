@@ -1,4 +1,4 @@
-# visualizer (v1.1.3)
+# visualizer (v1.1.3a)
 
 This project aims to make a quick visual representation for a C++ project (though Python support is planned).
 
@@ -67,6 +67,12 @@ Easiest example is `operator <<` which in most parsers is registered as a `binar
 * OMG, FINALLY RESIZE!!! (literally took 10 min to implement, no idea why didn't do it earlier)
 * OMG, FINALLY MOVE AROUND!!! (literally took another 10 min to implement, no idea why didn't do it earlier)
 
+Alpha patch:
+
+* Reduced number of line segments when drawing a curve, improved performance x2, almost not noticeable.
+* Various code improvements
+* Added FPS meter to verbose mode
+
 # Known bugs // missing features:
 * Function calls inside Loop and If conditions are not registered
 * No way to see actual code from visualizer
@@ -81,4 +87,4 @@ Easiest example is `operator <<` which in most parsers is registered as a `binar
 * No way to add libraries that shouldn't be rendered
 * No switch case support
 * Operator calls are not detected, even if they are user-defined
-* On large projects moving/resizing is quite CPU-intensive and takes significant time 
+* On large projects moving/resizing is quite CPU-intensive and takes significant time (projects of around 1500 lines of code are rendered at around 7-8 FPS) 

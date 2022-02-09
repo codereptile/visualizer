@@ -202,6 +202,9 @@ class Class(Node):
             elif i.kind.name == 'CONSTRUCTOR':
                 pass
                 # TODO: parse struct constructor
+            elif i.kind.name == 'DESTRUCTOR':
+                pass
+                # TODO: parse struct destructor
             elif i.kind.name == 'CXX_METHOD':
                 code_tree.methods[i.get_usr()] = Function(self)
                 self.body_nodes[i.get_usr()] = code_tree.methods[i.get_usr()]

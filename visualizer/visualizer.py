@@ -7,6 +7,7 @@ import arcade
 import enum
 import os.path
 import sys
+import time
 
 import clang.cindex
 
@@ -215,10 +216,14 @@ class Visualizer(arcade.Window):
 
         self.should_redraw = False
         self.a = False
+        # FIXME: make this 'a' a proper thing (it's used for showing blocks)
+
+        self.bruteforce = False
+        self.verbose = False
 
         self.global_offset_x = 100
         self.global_offset_y = 0
-        # FIXME: make this 'a' a proper thing (it's used for showing blocks)
+
         # TODO: add side-by-side code comparison
 
     def set_graphics_info(self, node):
@@ -240,7 +245,10 @@ class Visualizer(arcade.Window):
                     self.set_graphics_info(i)
 
     def parse(self, target: str, mode: ParseModes, bruteforce: bool, verbose: bool) -> None:
-        self.parser.parse(target, mode, bruteforce, verbose)
+        self.bruteforce = bruteforce
+        self.verbose = verbose
+
+        self.parser.parse(target, mode, self.bruteforce, self.verbose)
         # FIXME: make one loop instead of two to reduce code duplicates
         for i in self.parser.code_tree.roots:
             self.set_graphics_info(i)
@@ -255,7 +263,8 @@ class Visualizer(arcade.Window):
         tmp_offset_x = 0
 
         for i in self.parser.code_tree.roots:
-            self.compute_node_position(i, self.scaler, self.global_offset_x + tmp_offset_x, self.global_offset_y + (self.height - self.graphics_info[i].size_y) // 2)
+            self.compute_node_position(i, self.scaler, self.global_offset_x + tmp_offset_x,
+                                       self.global_offset_y + (self.height - self.graphics_info[i].size_y) // 2)
             tmp_offset_x += self.scaler.OBJECTS_BUFFER
             tmp_offset_x += self.graphics_info[i].size_x
 
@@ -405,6 +414,7 @@ class Visualizer(arcade.Window):
 
     def on_draw(self):
         if self.should_redraw:
+            start_time = time.time()
             arcade.start_render()
 
             for i in self.parser.code_tree.roots:
@@ -415,13 +425,17 @@ class Visualizer(arcade.Window):
             arcade.finish_render()
             self.should_redraw = False
 
+            end_time = time.time()
+            output_verbose(self.verbose, "Code redraw took:", end_time - start_time,
+                           "seconds (" + str(1 / (end_time - start_time)), "FPS)")
+
     def function_call_draw(self, node):
-        if node.target != None:
-            def quadBezier(t, p0, p1, p2):
+        if node.target is not None:
+            def quad_bezier(t, p0, p1, p2):
                 return (1 - t) ** 2 * p0 + 2 * (1 - t) * t * p1 + t ** 2 * p2
 
             t = 0
-            num_segments = 100
+            num_segments = 20
             block = 1 / num_segments
 
             prev_point_x = self.graphics_info[node].start_pos_x
@@ -431,18 +445,20 @@ class Visualizer(arcade.Window):
             if self.graphics_info[node].end_pos_x - self.graphics_info[node].start_pos_x > 0:
                 curvature_sign = -1
 
+            v = [self.graphics_info[node].end_pos_x - self.graphics_info[node].start_pos_x,
+                 self.graphics_info[node].end_pos_y - self.graphics_info[node].start_pos_y]
+            perp_v_scaled = [v[1] * self.scaler.LINE_CURVATURE * curvature_sign,
+                             -v[0] * self.scaler.LINE_CURVATURE * curvature_sign]
+
             while t < 1.001:
-                v = [self.graphics_info[node].end_pos_x - self.graphics_info[node].start_pos_x,
-                     self.graphics_info[node].end_pos_y - self.graphics_info[node].start_pos_y]
-                perp_v = [v[1], -v[0]]
-                x = quadBezier(t, self.graphics_info[node].start_pos_x,
-                               (self.graphics_info[node].start_pos_x + self.graphics_info[node].end_pos_x) // 2 +
-                               perp_v[0] * self.scaler.LINE_CURVATURE * curvature_sign,
-                               self.graphics_info[node].end_pos_x)
-                y = quadBezier(t, self.graphics_info[node].start_pos_y,
-                               (self.graphics_info[node].start_pos_y + self.graphics_info[node].end_pos_y) // 2 +
-                               perp_v[1] * self.scaler.LINE_CURVATURE * curvature_sign,
-                               self.graphics_info[node].end_pos_y)
+                x = quad_bezier(t, self.graphics_info[node].start_pos_x,
+                                (self.graphics_info[node].start_pos_x + self.graphics_info[node].end_pos_x) // 2 +
+                                perp_v_scaled[0],
+                                self.graphics_info[node].end_pos_x)
+                y = quad_bezier(t, self.graphics_info[node].start_pos_y,
+                                (self.graphics_info[node].start_pos_y + self.graphics_info[node].end_pos_y) // 2 +
+                                perp_v_scaled[1],
+                                self.graphics_info[node].end_pos_y)
                 arcade.draw_line(prev_point_x, prev_point_y,
                                  x, y,
                                  (0, 0, 0), self.scaler.LINE_WIDTH)
@@ -469,14 +485,21 @@ class Visualizer(arcade.Window):
             color = (50, 50, 50)
         elif type(node) == Struct:
             color = (75, 75, 75)
-        # FIXME: use draw_xywh_rectangle_filled
-        arcade.draw_rectangle_filled(self.graphics_info[node].pos_x + self.graphics_info[node].size_x / 2,
-                                     self.graphics_info[node].pos_y + self.graphics_info[node].size_y / 2,
-                                     self.graphics_info[node].size_x, self.graphics_info[node].size_y, color)
+        arcade.draw_xywh_rectangle_filled(
+            self.graphics_info[node].pos_x,
+            self.graphics_info[node].pos_y,
+            self.graphics_info[node].size_x,
+            self.graphics_info[node].size_y,
+            color
+        )
         if type(node) != CodeBlock:
-            arcade.draw_rectangle_outline(self.graphics_info[node].pos_x + self.graphics_info[node].size_x / 2,
-                                          self.graphics_info[node].pos_y + self.graphics_info[node].size_y / 2,
-                                          self.graphics_info[node].size_x, self.graphics_info[node].size_y, (0, 0, 0))
+            arcade.draw_xywh_rectangle_outline(
+                self.graphics_info[node].pos_x,
+                self.graphics_info[node].pos_y,
+                self.graphics_info[node].size_x,
+                self.graphics_info[node].size_y,
+                (0, 0, 0)
+            )
         if type(node) != CodeLine:
             offset_y = 0
             for i in node.body_nodes:
@@ -524,7 +547,3 @@ class Visualizer(arcade.Window):
         # FIXME: probably this should be made more elegant
         if should_recalculate:
             self.on_resize(self.width, self.height)
-
-
-
-
