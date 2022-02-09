@@ -1,7 +1,4 @@
-# visualizer 
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/codereptile/visualizer)
-![GitHub repo size](https://img.shields.io/github/repo-size/codereptile/visualizer)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/codereptile/visualizer?display_name=tag)
+# Visualizer ![GitHub release (latest by date)](https://img.shields.io/github/v/release/codereptile/visualizer?display_name=tag) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/codereptile/visualizer) ![GitHub repo size](https://img.shields.io/github/repo-size/codereptile/visualizer) 
 
 This project aims to make a quick visual representation for a C++ project (though Python support is planned).
 
