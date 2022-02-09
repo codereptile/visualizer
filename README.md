@@ -75,7 +75,6 @@ Easiest example is `operator <<` which in most parsers is registered as a `binar
 * No way to see how many times a function is called from a single line
 * No support for outside-of-function code
 * No way to resize/move in editor
-* 5000 tonnes of useless debug output with no way to shut it off
 * It's hard to tell code structure if there are many If statements
 * Class / struct constructors are not registered as function calls
 * **If an included library is not found, some code may be absent!!! (this can be partually avoided by commenting the problematic include)**
