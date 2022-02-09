@@ -7,6 +7,14 @@
 <img src='https://img.shields.io/github/repo-size/codereptile/visualizer?color=0000DD&label=repo+size&style=for-the-badge'>
 <img src='https://img.shields.io/github/commit-activity/m/codereptile/visualizer?style=for-the-badge'>
 </div>
+<div align='center'>
+ <img src='https://forthebadge.com/images/badges/made-with-python.svg'>
+ <img src='https://forthebadge.com/images/badges/built-with-love.svg'>
+ <img src='https://forthebadge.com/images/badges/powered-by-black-magic.svg'> 
+</div>
+
+
+
 
 This project aims to make a quick visual representation for a C++ project (though Python support is planned).
 
