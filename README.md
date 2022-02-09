@@ -1,4 +1,7 @@
-# visualizer (v1.1.3c) ![](https://img.shields.io/github/repo-size/codereptile/visualizer)
+# visualizer 
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/codereptile/visualizer)
+![GitHub repo size](https://img.shields.io/github/repo-size/codereptile/visualizer)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/codereptile/visualizer?display_name=tag)
 
 This project aims to make a quick visual representation for a C++ project (though Python support is planned).
 
@@ -62,24 +65,6 @@ Why not use `<insert your favorite C++ parser>`?
 &mdash;Because parsing C++ propely requires almost compiling it, 
 so only by using a compiler can we get a 100% correct output.
 Easiest example is `operator <<` which in most parsers is registered as a `binary expression`, when in reality it is a `function call`. 
-
-# What's new in v1.1.3?
-* OMG, FINALLY RESIZE!!! (literally took 10 min to implement, no idea why didn't do it earlier)
-* OMG, FINALLY MOVE AROUND!!! (literally took another 10 min to implement, no idea why didn't do it earlier)
-
-Alpha patch:
-
-* Reduced number of line segments when drawing a curve, improved performance x2, almost not noticeable.
-* Various code improvements
-* Added FPS meter to verbose mode
-
-Bravo patch:
-
-* Made better command line arguments for verbose and bruteforce modes
-
-Charlie patch:
-
-* Moved printing what files are detected to verbose output
 
 # Known bugs // missing features:
 * Function calls inside Loop and If conditions are not registered
