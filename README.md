@@ -1,4 +1,4 @@
-# visualizer (v1.1.3a)
+# visualizer (v1.1.3b)
 
 This project aims to make a quick visual representation for a C++ project (though Python support is planned).
 
@@ -22,7 +22,7 @@ sudo apt install libclang-11-dev
 python3 visualizer.py cpp --target examples/segment_tree --scale 0.5
 ```
 
-You can also use `--bruteforce 1` to avoid errors.
+**You can also use `-b` or `--bruteforce` to avoid errors.**
 
 ## Keyboard control:
 
@@ -72,6 +72,10 @@ Alpha patch:
 * Reduced number of line segments when drawing a curve, improved performance x2, almost not noticeable.
 * Various code improvements
 * Added FPS meter to verbose mode
+
+Bravo patch:
+
+* Made better command line arguments for verbose and bruteforce modes
 
 # Known bugs // missing features:
 * Function calls inside Loop and If conditions are not registered
