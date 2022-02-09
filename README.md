@@ -1,4 +1,4 @@
-# visualizer (v1.1.3c)
+# visualizer (v1.1.3c) ![](https://img.shields.io/github/repo-size/codereptile/visualizer)
 
 This project aims to make a quick visual representation for a C++ project (though Python support is planned).
 
