@@ -45,6 +45,8 @@ def parse_cursor(children_nodes, cursor: clang.cindex.Cursor, parent_node, brute
                               'CXX_TRY_STMT',
                               'COMPOUND_ASSIGNMENT_OPERATOR',
                               'CXX_UNARY_EXPR',
+                              'DECL_REF_EXPR',
+                              'SWITCH_STMT',  # FIXME: parse switch statement
                               ]:
         if len(children_nodes) == 0 or type(children_nodes[-1]) != CodeBlock:
             children_nodes.append(CodeBlock(parent_node, bruteforce, verbose))

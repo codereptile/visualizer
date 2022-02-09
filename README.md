@@ -1,4 +1,4 @@
-# visualizer (v1.1.3b)
+# visualizer (v1.1.3c)
 
 This project aims to make a quick visual representation for a C++ project (though Python support is planned).
 
@@ -76,6 +76,10 @@ Alpha patch:
 Bravo patch:
 
 * Made better command line arguments for verbose and bruteforce modes
+
+Charlie patch:
+
+* Moved printing what files are detected to verbose output
 
 # Known bugs // missing features:
 * Function calls inside Loop and If conditions are not registered

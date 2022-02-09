@@ -73,15 +73,15 @@ class Parser:
             red_on_black_print('Given target is not a directory')
             sys.exit(1)
 
-        print("Processing DIR:\t", self.target)
+        output_verbose(self.verbose, "Processing DIR:\t", self.target)
 
         for root, subdirs, files in os.walk(self.target):
             for file_name in files:
                 if file_name.endswith('.cpp'):
-                    print("Found C++:\t\t", root + '/' + file_name)
+                    output_verbose(self.verbose, "Found C++:\t\t", root + '/' + file_name)
                     self.parse_cpp_file(root + '/' + file_name)
                 else:
-                    print("Found Not C++:\t", root + '/' + file_name)
+                    output_verbose(self.verbose, "Found Not C++:\t", root + '/' + file_name)
 
     def parse_cpp_file(self, file_path: str) -> None:
         index = clang.cindex.Index.create()
