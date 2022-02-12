@@ -27,13 +27,17 @@ def parse_cursor(children_nodes, cursor: clang.cindex.Cursor, parent_node, brute
         for i in cursor.get_children():
             parse_cursor(children_nodes, i, parent_node, bruteforce, verbose)
     elif cursor.kind.name == 'FOR_STMT':
-        children_nodes.append(ForLoop(parent_node, cursor, bruteforce, verbose))
+        children_nodes.append(ForLoop(parent_node))
+        children_nodes[-1].parse_cpp(cursor, bruteforce, verbose)
     elif cursor.kind.name == 'CXX_FOR_RANGE_STMT':
-        children_nodes.append(ForRangeLoop(parent_node, cursor, bruteforce, verbose))
+        children_nodes.append(ForRangeLoop(parent_node))
+        children_nodes[-1].parse_cpp(cursor, bruteforce, verbose)
     elif cursor.kind.name == 'WHILE_STMT':
-        children_nodes.append(WhileLoop(parent_node, cursor, bruteforce, verbose))
+        children_nodes.append(WhileLoop(parent_node))
+        children_nodes[-1].parse_cpp(cursor, bruteforce, verbose)
     elif cursor.kind.name == 'IF_STMT':
-        children_nodes.append(If(parent_node, cursor, bruteforce, verbose))
+        children_nodes.append(If(parent_node))
+        children_nodes[-1].parse_cpp(cursor, bruteforce, verbose)
     elif cursor.kind.name in ['BINARY_OPERATOR',
                               'CALL_EXPR',
                               'RETURN_STMT',
@@ -49,7 +53,7 @@ def parse_cursor(children_nodes, cursor: clang.cindex.Cursor, parent_node, brute
                               'SWITCH_STMT',  # FIXME: parse switch statement
                               ]:
         if len(children_nodes) == 0 or type(children_nodes[-1]) != CodeBlock:
-            children_nodes.append(CodeBlock(parent_node, bruteforce, verbose))
+            children_nodes.append(CodeBlock(parent_node))
         children_nodes[-1].add_line(cursor, bruteforce, verbose)
     else:
         output_error(bruteforce, "Unknown object: ", cursor.kind.name, " located: ", cursor.location)
@@ -65,9 +69,12 @@ class Node:
 
 
 class CodeLine(Node):
-    # FIXME: move construction away from constructor
-    def __init__(self, parent_node, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
+
+    def __init__(self, parent_node):
         super().__init__(parent_node)
+        self.cursor = None
+
+    def parse_cpp(self, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
         self.cursor = cursor
 
     def print(self, depth):
@@ -75,13 +82,13 @@ class CodeLine(Node):
 
 
 class CodeBlock(Node):
-    # FIXME: move construction away from constructor
-    def __init__(self, parent_node, bruteforce: bool, verbose: bool):
+    def __init__(self, parent_node):
         super().__init__(parent_node)
         self.body_nodes = []
 
     def add_line(self, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
-        self.body_nodes.append(CodeLine(self, cursor, bruteforce, verbose))
+        self.body_nodes.append(CodeLine(self))
+        self.body_nodes[-1].parse_cpp(cursor, bruteforce, verbose)
 
     def print(self, depth):
         print('\t' * depth, 'Block of code:')
@@ -91,7 +98,7 @@ class CodeBlock(Node):
 
 class Loop(Node):
     # FIXME: move construction away from constructor
-    def __init__(self, parent_node, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
+    def __init__(self, parent_node):
         super().__init__(parent_node)
         self.body_nodes = []
 
@@ -101,10 +108,10 @@ class Loop(Node):
 
 
 class ForLoop(Loop):
-    # FIXME: move construction away from constructor
-    def __init__(self, parent_node, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
-        super().__init__(parent_node, cursor, bruteforce, verbose)
+    def __init__(self, parent_node):
+        super().__init__(parent_node)
 
+    def parse_cpp(self, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
         cursor_children = list(cursor.get_children())
         parse_cursor(self.body_nodes, cursor_children[-1], self, bruteforce, verbose)
         # FIXME: make a proper loop arguments parse
@@ -115,10 +122,10 @@ class ForLoop(Loop):
 
 
 class ForRangeLoop(Loop):
-    # FIXME: move construction away from constructor
-    def __init__(self, parent_node, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
-        super().__init__(parent_node, cursor, bruteforce, verbose)
+    def __init__(self, parent_node):
+        super().__init__(parent_node)
 
+    def parse_cpp(self, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
         cursor_children = list(cursor.get_children())
         parse_cursor(self.body_nodes, cursor_children[-1], self, bruteforce, verbose)
         # FIXME: make a proper loop arguments parse
@@ -129,10 +136,10 @@ class ForRangeLoop(Loop):
 
 
 class WhileLoop(Loop):
-    # FIXME: move construction away from constructor
-    def __init__(self, parent_node, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
-        super().__init__(parent_node, cursor, bruteforce, verbose)
+    def __init__(self, parent_node):
+        super().__init__(parent_node)
 
+    def parse_cpp(self, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
         cursor_children = list(cursor.get_children())
         parse_cursor(self.body_nodes, cursor_children[-1], self, bruteforce, verbose)
         # FIXME: make a proper loop arguments parse
@@ -143,13 +150,13 @@ class WhileLoop(Loop):
 
 
 class If(Node):
-    # FIXME: move construction away from constructor
-    def __init__(self, parent_node, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
+    def __init__(self, parent_node):
         super().__init__(parent_node)
 
         self.body_nodes = []
         self.else_nodes = []
 
+    def parse_cpp(self, cursor: clang.cindex.Cursor, bruteforce: bool, verbose: bool):
         cursor_children = list(cursor.get_children())
 
         # FIXME: parse condition
