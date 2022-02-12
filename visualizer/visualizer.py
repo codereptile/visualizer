@@ -215,14 +215,14 @@ class Visualizer(arcade.Window):
         self.scaler = Scaler(scale)
 
         self.should_redraw = False
-        self.a = False
-        # FIXME: make this 'a' a proper thing (it's used for showing blocks)
 
         self.bruteforce = False
         self.verbose = False
 
         self.global_offset_x = 100
         self.global_offset_y = 0
+
+        self.current_selected_node = None
 
         # TODO: add side-by-side code comparison
 
@@ -470,8 +470,6 @@ class Visualizer(arcade.Window):
         color = (0, 0, 0)
         if type(node) == CodeLine:
             color = (0, 50, 255)
-            if self.a:
-                return
         elif type(node) == ForLoop or type(node) == ForRangeLoop or type(node) == WhileLoop:
             color = (255, 0, 0)
         elif type(node) == If:
@@ -479,8 +477,7 @@ class Visualizer(arcade.Window):
         elif type(node) == Function:
             color = (125, 125, 125)
         elif type(node) == CodeBlock:
-            if not self.a:
-                color = (0, 0, 0, 0)
+            color = (0, 0, 0, 0)
         elif type(node) == Class:
             color = (50, 50, 50)
         elif type(node) == Struct:
@@ -500,6 +497,15 @@ class Visualizer(arcade.Window):
                 self.graphics_info[node].size_y,
                 (0, 0, 0)
             )
+            if node == self.current_selected_node:
+                arcade.draw_xywh_rectangle_outline(
+                    self.graphics_info[node].pos_x,
+                    self.graphics_info[node].pos_y,
+                    self.graphics_info[node].size_x,
+                    self.graphics_info[node].size_y,
+                    (255, 255, 0), 5
+                )
+
         if type(node) != CodeLine:
             offset_y = 0
             for i in node.body_nodes:
@@ -544,6 +550,26 @@ class Visualizer(arcade.Window):
             self.scaler.rescale(self.scaler.current_scale * 0.95)
             should_recalculate = True
 
-        # FIXME: probably this should be made more elegant
         if should_recalculate:
             self.on_resize(self.width, self.height)
+
+    def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
+        if button == 1:
+            self.should_redraw = True
+            self.current_selected_node = None
+            min_size_x = 1e9
+            # Find the smallest object selected:
+            for i in self.parser.code_tree.nodes:
+                if type(i) == CodeBlock:
+                    continue
+                offset_x = x - self.graphics_info[i].pos_x
+                offset_y = y - self.graphics_info[i].pos_y
+                if self.graphics_info[i].size_x < min_size_x and \
+                        (0 <= offset_x <= self.graphics_info[i].size_x) and \
+                        (0 <= offset_y <= self.graphics_info[i].size_y):
+                    self.current_selected_node = i
+                    min_size_x = self.graphics_info[i].size_x
+
+    def on_mouse_release(self, x: float, y: float, button: int, modifiers: int):
+        pass
+        #print("Mouse button released", x, y, button, modifiers)
