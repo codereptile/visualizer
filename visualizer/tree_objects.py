@@ -60,7 +60,6 @@ def parse_cursor(children_nodes, cursor: clang.cindex.Cursor, parent_node, brute
 
 
 class Node:
-    # FIXME: move construction away from constructor
     def __init__(self, parent_node):
         self.parent_node = parent_node
         self.root_node = self
@@ -69,7 +68,6 @@ class Node:
 
 
 class CodeLine(Node):
-
     def __init__(self, parent_node):
         super().__init__(parent_node)
         self.cursor = None
@@ -97,7 +95,6 @@ class CodeBlock(Node):
 
 
 class Loop(Node):
-    # FIXME: move construction away from constructor
     def __init__(self, parent_node):
         super().__init__(parent_node)
         self.body_nodes = []
@@ -177,7 +174,6 @@ class If(Node):
 
 
 class Function(Node):
-    # FIXME: move construction away from constructor
     def __init__(self, parent_node):
         super().__init__(parent_node)
         self.body_nodes = []
