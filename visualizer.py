@@ -7,7 +7,7 @@ if __name__ == '__main__':
     argument_parser = argparse.ArgumentParser(description='Visualize C++ / Python code')
     argument_parser.add_argument('mode', choices=['cpp', 'py'])
     argument_parser.add_argument('--target', required=True,
-                                 help='Directory / file to parse')
+                                 help='Directory to parse')
     argument_parser.add_argument('--scale', required=False, default=1, type=float,
                                  help='Scale of all objects')
     argument_parser.add_argument('-b', '--bruteforce', action='store_true',

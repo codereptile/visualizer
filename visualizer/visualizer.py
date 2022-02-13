@@ -2,11 +2,11 @@
 # and compress it into a lightweight and standardized tree that is easy to visualize.
 import random
 from pprint import pprint
+import sys
 
 import arcade
 import enum
 import os.path
-import sys
 import time
 
 import clang.cindex
@@ -572,4 +572,3 @@ class Visualizer(arcade.Window):
 
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int):
         pass
-        #print("Mouse button released", x, y, button, modifiers)
