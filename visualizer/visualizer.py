@@ -412,6 +412,12 @@ class Visualizer(arcade.Window):
         else:
             raise RuntimeError("unknown type:", type(node))
 
+    def move_root(self, node, scaler: Scaler, d_x: int, d_y: int) -> None:
+        offset_x = self.graphics_info[node].pos_x + d_x
+        offset_y = self.graphics_info[node].pos_y + d_y
+
+        self.compute_node_position(node, scaler, offset_x, offset_y)
+
     def on_draw(self):
         if self.should_redraw:
             start_time = time.time()
@@ -431,6 +437,8 @@ class Visualizer(arcade.Window):
 
     def function_call_draw(self, node):
         if node.target is not None:
+            # FIXME: do this properly
+            self.compute_function_call_graphics_info(node)
             def quad_bezier(t, p0, p1, p2):
                 return (1 - t) ** 2 * p0 + 2 * (1 - t) * t * p1 + t ** 2 * p2
 
@@ -530,28 +538,38 @@ class Visualizer(arcade.Window):
         pass
 
     def on_key_press(self, symbol, modifier):
-        should_recalculate = False
         if symbol == arcade.key.UP:
-            self.global_offset_y -= 50
-            should_recalculate = True
+            if self.current_selected_node is None:
+                for i in self.parser.code_tree.roots:
+                    self.move_root(i, self.scaler, 0, -50)
+            elif self.current_selected_node in self.parser.code_tree.roots:
+                self.move_root(self.current_selected_node, self.scaler, 0, 50)
+            self.should_redraw = True
         elif symbol == arcade.key.DOWN:
-            self.global_offset_y += 50
-            should_recalculate = True
+            if self.current_selected_node is None:
+                for i in self.parser.code_tree.roots:
+                    self.move_root(i, self.scaler, 0, 50)
+            elif self.current_selected_node in self.parser.code_tree.roots:
+                self.move_root(self.current_selected_node, self.scaler, 0, -50)
+            self.should_redraw = True
         elif symbol == arcade.key.RIGHT:
-            self.global_offset_x -= 50
-            should_recalculate = True
+            if self.current_selected_node is None:
+                for i in self.parser.code_tree.roots:
+                    self.move_root(i, self.scaler, -50, 0)
+            elif self.current_selected_node in self.parser.code_tree.roots:
+                self.move_root(self.current_selected_node, self.scaler, 50, 0)
+            self.should_redraw = True
         elif symbol == arcade.key.LEFT:
-            self.global_offset_x += 50
-            should_recalculate = True
+            if self.current_selected_node is None:
+                for i in self.parser.code_tree.roots:
+                    self.move_root(i, self.scaler, 50, 0)
+            elif self.current_selected_node in self.parser.code_tree.roots:
+                self.move_root(self.current_selected_node, self.scaler, -50, 0)
+            self.should_redraw = True
         elif symbol == arcade.key.KEY_0:
             self.scaler.rescale(self.scaler.current_scale * 1.05)
-            should_recalculate = True
         elif symbol == arcade.key.KEY_9:
             self.scaler.rescale(self.scaler.current_scale * 0.95)
-            should_recalculate = True
-
-        if should_recalculate:
-            self.on_resize(self.width, self.height)
 
     def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
         if button == 1:
