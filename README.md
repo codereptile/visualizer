@@ -95,4 +95,4 @@ Easiest example is `operator <<` which in most parsers is registered as a `binar
 * No way to add libraries that shouldn't be rendered
 * No switch case support
 * Operator calls are not detected, even if they are user-defined
-* On large projects moving/resizing is quite CPU-intensive and takes significant time (projects of around 1500 lines of code are rendered at around 7-8 FPS) 
+* On large projects moving/resizing is quite CPU-intensive and takes significant time (projects of around 1500 lines of code are rendered at around 7-8 FPS (125-150ms response time)) 
