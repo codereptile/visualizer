@@ -1,4 +1,4 @@
-<h1 align='center'> Visualizer </h1>
+<h1 align='center'> Project L.A.B.Y.R.I.N.T.H </h1>
 <div align='center'>
 <a href='https://github.com/codereptile/visualizer/releases'>  
 <img src='https://img.shields.io/github/v/release/codereptile/visualizer?color=00CC00&label=version&style=for-the-badge'>
